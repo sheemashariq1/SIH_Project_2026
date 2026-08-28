@@ -124,6 +124,7 @@ export const Navbar: React.FC = () => {
               {isNotifOpen && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 text-gray-800 py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-4 pb-2 border-b border-gray-100 flex items-center justify-between">
+                  <div className="px-4 pb-2 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="w-4 h-4 text-[#14532D]" />
                       <h4 className="font-heading font-bold text-sm text-[#14532D]">
