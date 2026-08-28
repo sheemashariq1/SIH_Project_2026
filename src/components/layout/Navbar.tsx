@@ -8,10 +8,7 @@ import {
   ChevronDown,
   LogOut,
   Sparkles,
-  MapPin,
-  CheckCircle2,
-  AlertTriangle,
-  Download
+  MapPin
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -70,17 +67,6 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Quick ZIP Export Button */}
-            <a
-              href="/kisanconnect-app.zip"
-              download="kisanconnect-app.zip"
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-[#14532D] font-bold text-xs shadow-sm transition-all border border-amber-500/30"
-              title="Download Source Code ZIP"
-            >
-              <Download className="w-3.5 h-3.5 text-[#14532D]" />
-              <span className="hidden sm:inline">Download ZIP</span>
-            </a>
-
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
@@ -98,25 +84,22 @@ export const Navbar: React.FC = () => {
                   setRole('farmer');
                   setFarmerTab('home');
                 }}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'farmer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'farmer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                  }`}
               >
                 👨‍🌾 {t('Farmer', 'किसान')}
               </button>
               <button
                 onClick={() => setRole('buyer')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'buyer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'buyer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                  }`}
               >
                 🏢 {t('Buyer', 'खरीदार')}
               </button>
               <button
                 onClick={() => setRole('admin')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'admin' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                }`}
+                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'admin' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                  }`}
               >
                 ⚡ {t('Admin', 'व्यवस्थापक')}
               </button>
@@ -164,9 +147,8 @@ export const Navbar: React.FC = () => {
                           }
                           setIsNotifOpen(false);
                         }}
-                        className={`p-3 rounded-xl hover:bg-emerald-50/70 transition-colors cursor-pointer text-left ${
-                          !n.read ? 'bg-amber-50/60 font-medium' : 'opacity-85'
-                        }`}
+                        className={`p-3 rounded-xl hover:bg-emerald-50/70 transition-colors cursor-pointer text-left ${!n.read ? 'bg-amber-50/60 font-medium' : 'opacity-85'
+                          }`}
                       >
                         <div className="flex items-start justify-between">
                           <p className="text-xs font-bold text-[#14532D] flex items-center space-x-1">
