@@ -55,7 +55,7 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Center Location & Mode Tag (Visible when not in landing) */}
+          {/* Center Location & Mode Tag */}
           {role !== 'landing' && (
             <div className="hidden md:flex items-center space-x-2 bg-[#0F3E22]/60 px-3.5 py-1.5 rounded-full border border-emerald-500/20 text-xs text-emerald-100">
               <MapPin className="w-3.5 h-3.5 text-[#FACC15]" />
@@ -77,7 +77,7 @@ export const Navbar: React.FC = () => {
               <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
             </button>
 
-            {/* Role Switcher Pills (Header quick toggle for easy SIH evaluator testing) */}
+            {/* Role Switcher Pills */}
             <div className="hidden lg:flex items-center bg-[#0F3E22] p-1 rounded-lg border border-emerald-600/30 text-xs">
               <button
                 onClick={() => {
@@ -123,7 +123,6 @@ export const Navbar: React.FC = () => {
               {/* Notification dropdown */}
               {isNotifOpen && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 text-gray-800 py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-4 pb-2 border-b border-gray-100 flex items-center justify-between">
                   <div className="px-4 pb-2 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="w-4 h-4 text-[#14532D]" />
