@@ -1,75 +1,85 @@
 // api/analyze-crop.js
 //
 // Vercel Serverless Function (Node.js runtime).
-// Runs SERVER-SIDE ONLY — this is the one place the GEMINI_API_KEY is used,
+// Runs SERVER-SIDE ONLY — this is the one place GEMINI_API_KEY is used,
 // so it is never exposed to the browser.
 //
-// Calls Google's Gemini vision-language model (gemini-2.0-flash by default)
-// with the farmer's crop photo and asks it to return a structured quality
-// assessment. The response is validated + clamped server-side before being
-// sent back to the app, and the app always has a safe local fallback if this
-// endpoint is unreachable or misconfigured (see src/lib/analyzeCrop.ts).
+// Calls Google's Gemini vision model with the farmer's crop photo and asks
+// it to return a structured quality assessment. We use Gemini's native
+// `responseSchema` feature so the model is constrained to return valid JSON
+// matching our exact shape (far more reliable than asking it nicely in a
+// prompt and hoping). The response is still validated + clamped server-side
+// before being sent back to the app, and the app always has a safe local
+// fallback if this endpoint is unreachable or misconfigured
+// (see src/lib/analyzeCrop.ts).
 //
 // Required env var (set in Vercel Project Settings -> Environment Variables,
 // and in a local .env file for `vercel dev`):
 //   GEMINI_API_KEY=xxxxxxxxxxxxxxxxxxxx
+//   (get one free at https://aistudio.google.com/apikey)
 //
 // Optional env vars:
-//   GEMINI_VISION_MODEL  (default: "gemini-2.0-flash")
-//   GEMINI_API_BASE_URL  (default: "https://generativelanguage.googleapis.com/v1beta")
-
+//   GEMINI_VISION_MODEL   (default: "gemini-2.5-flash")
+//   GEMINI_API_BASE_URL   (default: "https://generativelanguage.googleapis.com/v1beta")
+//
 // Note: Vercel Serverless Functions (outside of Next.js) have a fixed request
 // body size limit (~4.5MB) that isn't raiseable via config here. The client
 // (src/lib/analyzeCrop.ts) always downsizes photos to <=1024px JPEGs before
 // upload, which comfortably stays under that limit.
 
-const DEFAULT_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.0-flash';
+const DEFAULT_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash';
 const BASE_URL = process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
 
 const SYSTEM_PROMPT = `You are AgriVision, a computer-vision crop quality inspector used by an Indian agri-marketplace.
 You will be shown one photo of a harvested crop (grain, vegetable, or fruit) supplied by a farmer.
-Visually inspect the produce and return ONLY a single valid JSON object (no markdown fences, no prose
-before or after) with exactly this shape:
-
-{
-  "cropDetected": string,               // your best guess at the crop name, e.g. "Wheat"
-  "qualityScore": number,               // 0-100 overall quality score
-  "recommendedGrade": "Grade A" | "Grade B" | "Grade C",
-  "confidence": number,                 // 0-100 confidence in this assessment
-  "visibleDamagePercent": number,       // 0-100 estimated % of visible damage/blemish
-  "spoilageIndicator": "Low" | "Medium" | "High",
-  "moistureContent": string,            // your best visual estimate, e.g. "~11-13%"
-  "lusterScore": string,                // short phrase, e.g. "High / Golden Luster"
-  "positiveIndicators": string[],       // 2-4 short bullet phrases of good qualities you observed
-  "warnings": string[],                 // 0-3 short bullet phrases of visible issues (can be empty array)
-  "recommendationText": string          // one sentence, market-readiness recommendation
-}
+Visually inspect the produce in the photo and return a structured quality assessment.
 
 Rules:
-- Base every field ONLY on what is visible in the image. If the image is blurry, dark, or not produce,
-  still return your best-effort JSON but lower "confidence" and note it in "warnings".
-- Never claim to be 100% accurate or guarantee a price. This is decision-support only.
-- Keep every string field concise (under ~120 characters).
-- Return ONLY the JSON object. Do not wrap it in \`\`\`json or any other text.`;
+- Base every field ONLY on what is visible in the image.
+- If the image is blurry, dark, too far away, or does not clearly show produce, still return your
+  best-effort assessment but lower "confidence" and add a note to "warnings" explaining why.
+- Never claim to be 100% accurate and never guarantee a market price. This is decision-support only.
+- Keep every string field concise (well under 150 characters).`;
 
-function extractJson(text) {
-  if (!text) return null;
-  let cleaned = text.trim();
-  // Strip ```json ... ``` or ``` ... ``` fences if the model added them anyway.
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
-  // Fall back to grabbing the first {...} block.
-  const braceStart = cleaned.indexOf('{');
-  const braceEnd = cleaned.lastIndexOf('}');
-  if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
-    cleaned = cleaned.slice(braceStart, braceEnd + 1);
-  }
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    return null;
-  }
-}
+// Gemini's structured-output schema. The model is constrained to return
+// JSON matching this shape exactly, so no brittle text-parsing is needed.
+const RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    cropDetected: { type: 'STRING', description: 'Best guess at the crop name, e.g. "Wheat"' },
+    qualityScore: { type: 'NUMBER', description: 'Overall quality score from 0-100' },
+    recommendedGrade: { type: 'STRING', enum: ['Grade A', 'Grade B', 'Grade C'] },
+    confidence: { type: 'NUMBER', description: 'Confidence in this assessment, 0-100' },
+    visibleDamagePercent: { type: 'NUMBER', description: 'Estimated % of visible damage/blemish, 0-100' },
+    spoilageIndicator: { type: 'STRING', enum: ['Low', 'Medium', 'High'] },
+    moistureContent: { type: 'STRING', description: 'Best visual estimate, e.g. "~11-13%"' },
+    lusterScore: { type: 'STRING', description: 'Short phrase, e.g. "High / Golden Luster"' },
+    positiveIndicators: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+      description: '2-4 short bullet phrases of good qualities observed'
+    },
+    warnings: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+      description: '0-3 short bullet phrases of visible issues (empty array if none)'
+    },
+    recommendationText: { type: 'STRING', description: 'One sentence market-readiness recommendation' }
+  },
+  required: [
+    'cropDetected',
+    'qualityScore',
+    'recommendedGrade',
+    'confidence',
+    'visibleDamagePercent',
+    'spoilageIndicator',
+    'moistureContent',
+    'lusterScore',
+    'positiveIndicators',
+    'warnings',
+    'recommendationText'
+  ]
+};
 
 function clampNumber(value, min, max, fallback) {
   const n = Number(value);
@@ -112,13 +122,11 @@ function normalize(raw, cropHint) {
   };
 }
 
-// Gemini wants the raw base64 payload and the mime type separately, not a
-// single data: URL like GLM/OpenAI-style APIs accept. This splits
-// "data:image/jpeg;base64,/9j/4AAQ..." into { mimeType, data }.
+/** Splits a "data:image/jpeg;base64,AAAA..." string into { mimeType, base64Data }. */
 function parseDataUrl(dataUrl) {
-  const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
   if (!match) return null;
-  return { mimeType: match[1], data: match[2] };
+  return { mimeType: match[1], base64Data: match[2] };
 }
 
 export default async function handler(req, res) {
@@ -140,8 +148,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Request must include a base64 "image" data URL.' });
   }
 
-  const imageParts = parseDataUrl(image);
-  if (!imageParts) {
+  const parsedImage = parseDataUrl(image);
+  if (!parsedImage) {
     return res.status(400).json({ success: false, error: 'Could not parse the image data URL.' });
   }
 
@@ -149,39 +157,35 @@ export default async function handler(req, res) {
   const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
-    const response = await fetch(
-      `${BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            role: 'system',
-            parts: [{ text: SYSTEM_PROMPT }]
-          },
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json'
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { inlineData: { mimeType: imageParts.mimeType, data: imageParts.data } },
-                {
-                  text: cropHint
-                    ? `The farmer says this is: ${cropHint}. Inspect the photo and return the JSON assessment.`
-                    : 'Inspect the photo and return the JSON assessment.'
-                }
-              ]
-            }
-          ]
-        }),
-        signal: controller.signal
-      }
-    );
+    const url = `${BASE_URL}/models/${DEFAULT_MODEL}:generateContent`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: cropHint
+                  ? `${SYSTEM_PROMPT}\n\nThe farmer says this is: ${cropHint}. Inspect the attached photo and return the assessment.`
+                  : `${SYSTEM_PROMPT}\n\nInspect the attached photo and return the assessment.`
+              },
+              { inline_data: { mime_type: parsedImage.mimeType, data: parsedImage.base64Data } }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: RESPONSE_SCHEMA
+        }
+      }),
+      signal: controller.signal
+    });
 
     clearTimeout(timeout);
 
@@ -189,19 +193,31 @@ export default async function handler(req, res) {
       const errText = await response.text().catch(() => '');
       return res.status(502).json({
         success: false,
-        error: `Gemini vision API error (${response.status}): ${errText.slice(0, 300) || 'no details returned'}`
+        error: `Gemini API error (${response.status}): ${errText.slice(0, 300) || 'no details returned'}`
       });
     }
 
     const data = await response.json();
-    const contentText = data?.candidates?.[0]?.content?.parts?.map((p) => p?.text || '').join('\n');
 
-    const parsed = extractJson(contentText);
-    if (!parsed) {
+    const candidate = data?.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
       return res.status(502).json({
         success: false,
-        error: 'Gemini vision API returned a response that could not be parsed as JSON.',
-        raw: typeof contentText === 'string' ? contentText.slice(0, 500) : null
+        error: `Gemini declined to complete the analysis (reason: ${finishReason}). Try a clearer photo.`
+      });
+    }
+
+    const contentText = candidate?.content?.parts?.map((p) => p?.text || '').join('') || '';
+
+    let parsed;
+    try {
+      parsed = JSON.parse(contentText);
+    } catch {
+      return res.status(502).json({
+        success: false,
+        error: 'Gemini returned a response that could not be parsed as JSON.',
+        raw: contentText.slice(0, 500)
       });
     }
 
@@ -213,7 +229,7 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     clearTimeout(timeout);
-    const message = err?.name === 'AbortError' ? 'Gemini vision API timed out.' : err?.message || 'Unknown server error.';
+    const message = err?.name === 'AbortError' ? 'Gemini API timed out.' : err?.message || 'Unknown server error.';
     return res.status(502).json({ success: false, error: message });
   }
 }

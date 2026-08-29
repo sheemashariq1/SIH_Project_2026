@@ -273,6 +273,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setWizardImage = (file: File) => {
+    // Revoke the previous blob preview URL (if any) before creating a new one,
+    // so repeated uploads/rescans don't leak memory. The default sample image
+    // is a remote https:// URL, not a blob: URL, so it's safely skipped.
+    if (sellWizard.imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(sellWizard.imagePreview);
+    }
     const previewUrl = URL.createObjectURL(file);
     setSellWizard((prev) => ({
       ...prev,
