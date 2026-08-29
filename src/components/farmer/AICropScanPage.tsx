@@ -91,6 +91,7 @@ export const AICropScanPage: React.FC = () => {
   };
 
   const handleFileSelected = async (file: File) => {
+    if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     const targetCrop = CROPS_DATA.find((c) => c.id === selectedCropId) || CROPS_DATA[0];
@@ -117,8 +118,8 @@ export const AICropScanPage: React.FC = () => {
           </div>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
             {t(
-              'Upload a real photo of your harvest for computer-vision grading, powered by GLM vision AI.',
-              'अपने फसल की असली तस्वीर अपलोड करें, GLM विज़न AI द्वारा गुणवत्ता जांच होगी।'
+              'Upload a real photo of your harvest for computer-vision grading, powered by Gemini vision AI.',
+              'अपने फसल की असली तस्वीर अपलोड करें, Gemini विज़न AI द्वारा गुणवत्ता जांच होगी।'
             )}
           </p>
         </div>
@@ -307,7 +308,7 @@ export const AICropScanPage: React.FC = () => {
                   <span className="text-[10px] text-gray-500 font-bold block">CONFIDENCE</span>
                   <span className="font-heading text-2xl font-bold text-gray-900">{report?.confidence ?? '—'}%</span>
                   <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
-                    {report?.aiSource === 'live' ? 'GLM Vision' : 'Demo Estimate'}
+                    {report?.aiSource === 'live' ? 'Gemini Vision' : 'Demo Estimate'}
                   </span>
                 </div>
 

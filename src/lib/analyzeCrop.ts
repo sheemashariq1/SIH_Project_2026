@@ -4,7 +4,7 @@
 // AI scan step. Responsibilities:
 //   1. Downscale/compress the photo in-browser (canvas) so uploads stay small
 //      and fast on rural/mobile connections.
-//   2. Call the real GLM vision endpoint at /api/analyze-crop.
+//   2. Call the real Gemini vision endpoint at /api/analyze-crop.
 //   3. If that call fails for ANY reason (no API key configured yet, offline
 //      demo, network hiccup, rate limit, etc.) fall back to a clearly-labelled
 //      simulated result so the app never breaks during a demo.
@@ -55,7 +55,7 @@ export async function toCompressedDataUrl(input: File | Blob | string): Promise<
 
 function buildDemoAssessment(cropId: string, cropName: string): AIQualityAssessment {
   // Deterministic-ish "demo mode" fallback so judges still see a full report
-  // even before a GLM_API_KEY is configured, or if the network call fails.
+  // even before a GEMINI_API_KEY is configured, or if the network call fails.
   const seed = cropName.length + cropId.length;
   const score = 70 + (seed % 21); // 70-90
   const grade: AIQualityAssessment['recommendedGrade'] = score >= 85 ? 'Grade A' : score >= 75 ? 'Grade B' : 'Grade C';
@@ -75,7 +75,7 @@ function buildDemoAssessment(cropId: string, cropName: string): AIQualityAssessm
         `Reasonable uniformity observed in ${cropName} sample`,
         'No major infestation visible in demo estimate'
       ],
-      warnings: ['Demo estimate only — connect GLM_API_KEY for live computer-vision grading']
+      warnings: ['Demo estimate only — connect GEMINI_API_KEY for live computer-vision grading']
     },
     recommendationText: `Suitable for ${grade} market listing pending live AI or manual verification.`,
     analyzedAt: 'Just now (Demo Mode)',

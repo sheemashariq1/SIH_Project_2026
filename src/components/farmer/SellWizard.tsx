@@ -417,7 +417,7 @@ export const SellWizard: React.FC = () => {
                     : 'bg-amber-100 text-amber-800 border border-amber-300'
                 }`}
               >
-                {sellWizard.aiAssessment.aiSource === 'live' ? '● LIVE GLM VISION' : '● DEMO MODE'}
+                {sellWizard.aiAssessment.aiSource === 'live' ? '● LIVE GEMINI VISION' : '● DEMO MODE'}
               </span>
             )}
           </div>
