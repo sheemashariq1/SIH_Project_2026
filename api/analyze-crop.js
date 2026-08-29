@@ -1,10 +1,10 @@
 // api/analyze-crop.js
 //
 // Vercel Serverless Function (Node.js runtime).
-// Runs SERVER-SIDE ONLY — this is the one place the GLM_API_KEY is used,
+// Runs SERVER-SIDE ONLY — this is the one place the GEMINI_API_KEY is used,
 // so it is never exposed to the browser.
 //
-// Calls Zhipu AI / Z.ai's GLM vision-language model (GLM-4.5V / GLM-4V family)
+// Calls Google's Gemini vision-language model (gemini-2.0-flash by default)
 // with the farmer's crop photo and asks it to return a structured quality
 // assessment. The response is validated + clamped server-side before being
 // sent back to the app, and the app always has a safe local fallback if this
@@ -12,19 +12,19 @@
 //
 // Required env var (set in Vercel Project Settings -> Environment Variables,
 // and in a local .env file for `vercel dev`):
-//   GLM_API_KEY=xxxxxxxxxxxxxxxxxxxx
+//   GEMINI_API_KEY=xxxxxxxxxxxxxxxxxxxx
 //
 // Optional env vars:
-//   GLM_VISION_MODEL   (default: "glm-4.5v")
-//   GLM_API_BASE_URL   (default: "https://open.bigmodel.cn/api/paas/v4")
+//   GEMINI_VISION_MODEL  (default: "gemini-2.0-flash")
+//   GEMINI_API_BASE_URL  (default: "https://generativelanguage.googleapis.com/v1beta")
 
 // Note: Vercel Serverless Functions (outside of Next.js) have a fixed request
 // body size limit (~4.5MB) that isn't raiseable via config here. The client
 // (src/lib/analyzeCrop.ts) always downsizes photos to <=1024px JPEGs before
 // upload, which comfortably stays under that limit.
 
-const DEFAULT_MODEL = process.env.GLM_VISION_MODEL || 'glm-4.5v';
-const BASE_URL = process.env.GLM_API_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
+const DEFAULT_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.0-flash';
+const BASE_URL = process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
 
 const SYSTEM_PROMPT = `You are AgriVision, a computer-vision crop quality inspector used by an Indian agri-marketplace.
 You will be shown one photo of a harvested crop (grain, vegetable, or fruit) supplied by a farmer.
@@ -112,17 +112,26 @@ function normalize(raw, cropHint) {
   };
 }
 
+// Gemini wants the raw base64 payload and the mime type separately, not a
+// single data: URL like GLM/OpenAI-style APIs accept. This splits
+// "data:image/jpeg;base64,/9j/4AAQ..." into { mimeType, data }.
+function parseDataUrl(dataUrl) {
+  const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
+  if (!match) return null;
+  return { mimeType: match[1], data: match[2] };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ success: false, error: 'Method not allowed. Use POST.' });
   }
 
-  const apiKey = process.env.GLM_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({
       success: false,
-      error: 'GLM_API_KEY is not configured on the server. Add it in Vercel Project Settings → Environment Variables.'
+      error: 'GEMINI_API_KEY is not configured on the server. Add it in Vercel Project Settings → Environment Variables.'
     });
   }
 
@@ -131,37 +140,48 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Request must include a base64 "image" data URL.' });
   }
 
+  const imageParts = parseDataUrl(image);
+  if (!imageParts) {
+    return res.status(400).json({ success: false, error: 'Could not parse the image data URL.' });
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
-    const response = await fetch(`${BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: [
-              { type: 'image_url', image_url: { url: image } },
-              {
-                type: 'text',
-                text: cropHint
-                  ? `The farmer says this is: ${cropHint}. Inspect the photo and return the JSON assessment.`
-                  : 'Inspect the photo and return the JSON assessment.'
-              }
-            ]
-          }
-        ]
-      }),
-      signal: controller.signal
-    });
+    const response = await fetch(
+      `${BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            role: 'system',
+            parts: [{ text: SYSTEM_PROMPT }]
+          },
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json'
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { inlineData: { mimeType: imageParts.mimeType, data: imageParts.data } },
+                {
+                  text: cropHint
+                    ? `The farmer says this is: ${cropHint}. Inspect the photo and return the JSON assessment.`
+                    : 'Inspect the photo and return the JSON assessment.'
+                }
+              ]
+            }
+          ]
+        }),
+        signal: controller.signal
+      }
+    );
 
     clearTimeout(timeout);
 
@@ -169,34 +189,31 @@ export default async function handler(req, res) {
       const errText = await response.text().catch(() => '');
       return res.status(502).json({
         success: false,
-        error: `GLM vision API error (${response.status}): ${errText.slice(0, 300) || 'no details returned'}`
+        error: `Gemini vision API error (${response.status}): ${errText.slice(0, 300) || 'no details returned'}`
       });
     }
 
     const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content;
-    const contentText = Array.isArray(content)
-      ? content.map((c) => (typeof c === 'string' ? c : c?.text || '')).join('\n')
-      : content;
+    const contentText = data?.candidates?.[0]?.content?.parts?.map((p) => p?.text || '').join('\n');
 
     const parsed = extractJson(contentText);
     if (!parsed) {
       return res.status(502).json({
         success: false,
-        error: 'GLM vision API returned a response that could not be parsed as JSON.',
+        error: 'Gemini vision API returned a response that could not be parsed as JSON.',
         raw: typeof contentText === 'string' ? contentText.slice(0, 500) : null
       });
     }
 
     return res.status(200).json({
       success: true,
-      provider: 'glm',
+      provider: 'gemini',
       model: DEFAULT_MODEL,
       data: normalize(parsed, cropHint)
     });
   } catch (err) {
     clearTimeout(timeout);
-    const message = err?.name === 'AbortError' ? 'GLM vision API timed out.' : err?.message || 'Unknown server error.';
+    const message = err?.name === 'AbortError' ? 'Gemini vision API timed out.' : err?.message || 'Unknown server error.';
     return res.status(502).json({ success: false, error: message });
   }
 }
