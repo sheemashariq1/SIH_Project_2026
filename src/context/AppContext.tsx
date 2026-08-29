@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import confetti from 'canvas-confetti';
+import { analyzeCropImage } from '../lib/analyzeCrop';
 import {
   Role,
   Language,
@@ -78,7 +79,10 @@ export interface SellWizardState {
   hasStorage: boolean;
   hasTransport: boolean;
   imagePreview: string | null;
+  /** The real uploaded File (if the farmer picked one), used for live AI vision analysis. */
+  imageFile: File | null;
   aiAssessment: AIQualityAssessment | null;
+  aiError: string | null;
   isScanning: boolean;
   scanStepIndex: number;
   expectedPrice: number;
@@ -133,6 +137,7 @@ interface AppContextType {
   resetSellWizard: () => void;
   startSellWithCrop: (cropId: string) => void;
   runAIScanForWizard: (sampleCropId?: string) => Promise<void>;
+  setWizardImage: (file: File) => void;
   publishCurrentWizardListing: () => void;
 
   // Actions
@@ -175,7 +180,9 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
   hasStorage: false,
   hasTransport: false,
   imagePreview: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
+  imageFile: null,
   aiAssessment: null,
+  aiError: null,
   isScanning: false,
   scanStepIndex: 0,
   expectedPrice: 2450,
@@ -265,6 +272,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFarmerTab('sell');
   };
 
+  const setWizardImage = (file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    setSellWizard((prev) => ({
+      ...prev,
+      imageFile: file,
+      imagePreview: previewUrl,
+      aiAssessment: null,
+      aiError: null
+    }));
+  };
+
   const runAIScanForWizard = async (sampleCropId?: string) => {
     const targetCrop = sampleCropId
       ? CROPS_DATA.find((c) => c.id === sampleCropId) || sellWizard.crop
@@ -273,47 +291,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSellWizard((prev) => ({
       ...prev,
       isScanning: true,
-      scanStepIndex: 0
+      scanStepIndex: 0,
+      aiError: null
     }));
 
-    // Simulated multi-stage scan delays
-    for (let i = 1; i <= 6; i++) {
-      await new Promise((res) => setTimeout(res, 450));
-      setSellWizard((prev) => ({
-        ...prev,
-        scanStepIndex: i
-      }));
-    }
+    // Drive the scan-stage animation while the real (or fallback) analysis runs in parallel.
+    const animationSteps = (async () => {
+      for (let i = 1; i <= 6; i++) {
+        await new Promise((res) => setTimeout(res, 450));
+        setSellWizard((prev) => ({ ...prev, scanStepIndex: i }));
+      }
+    })();
 
-    // High quality assessment synthesis
-    const mockAssessment: AIQualityAssessment = {
-      cropId: targetCrop?.id || 'wheat',
-      cropName: targetCrop?.name || 'Wheat',
-      qualityScore: 87,
-      recommendedGrade: 'Grade A',
-      confidence: 91,
-      visibleDamagePercent: 8,
-      spoilageIndicator: 'Low',
-      moistureContent: '11.4%',
-      lusterScore: 'High / Golden Sheen',
-      indicators: {
-        positive: [
-          'Uniform grain size, weight and natural golden luster',
-          'Moisture level strictly under optimal 12% storage threshold',
-          'Negligible foreign matter / chaff (< 1.1%)'
-        ],
-        warnings: [
-          'Minor 8% surface abrasion during mechanical threshing'
-        ]
-      },
-      recommendationText: 'Suitable for premium commercial procurement with maximum price realization and zero mandi broker cut.',
-      analyzedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    // Prefer the farmer's real uploaded photo; fall back to the existing preview
+    // (e.g. the default sample image) so the flow always produces a result.
+    const imageSource: File | string | null = sellWizard.imageFile || sellWizard.imagePreview;
+
+    const analysisPromise = imageSource
+      ? analyzeCropImage(imageSource, targetCrop?.id || 'wheat', targetCrop?.name || 'Wheat')
+      : Promise.resolve(null);
+
+    const [, result] = await Promise.all([animationSteps, analysisPromise]);
 
     setSellWizard((prev) => ({
       ...prev,
       isScanning: false,
-      aiAssessment: mockAssessment
+      aiAssessment: result?.assessment ?? null,
+      aiError: result?.source === 'demo' ? result.error || 'Live AI grading unavailable — showing demo estimate.' : null
     }));
   };
 
@@ -717,6 +721,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resetSellWizard,
         startSellWithCrop,
         runAIScanForWizard,
+        setWizardImage,
         publishCurrentWizardListing,
         sendCounterOffer,
         acceptOffer,

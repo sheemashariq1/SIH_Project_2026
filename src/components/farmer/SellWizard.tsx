@@ -27,6 +27,7 @@ export const SellWizard: React.FC = () => {
   const {
     sellWizard,
     setSellWizard,
+    setWizardImage,
     runAIScanForWizard,
     publishCurrentWizardListing,
     mandis,
@@ -324,7 +325,28 @@ export const SellWizard: React.FC = () => {
               {t('Upload Crop Sample Photo for AI Quality Assessment', 'एआई गुणवत्ता जांच हेतु फसल की तस्वीर अपलोड करें')}
             </label>
 
-            <div className="border-2 border-dashed border-emerald-600/40 hover:border-emerald-600 bg-emerald-50/40 rounded-2xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
+            <label
+              htmlFor="wizard-crop-upload"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files?.[0];
+                if (file) setWizardImage(file);
+              }}
+              className="border-2 border-dashed border-emerald-600/40 hover:border-emerald-600 bg-emerald-50/40 rounded-2xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center"
+            >
+              <input
+                id="wizard-crop-upload"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setWizardImage(file);
+                  e.target.value = '';
+                }}
+              />
               <div className="w-12 h-12 rounded-full bg-emerald-100 text-[#14532D] flex items-center justify-center mb-2">
                 <Camera className="w-6 h-6" />
               </div>
@@ -343,11 +365,11 @@ export const SellWizard: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                   <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">
-                    Sample Attached
+                    {sellWizard.imageFile ? 'Your Photo' : 'Sample Attached'}
                   </span>
                 </div>
               )}
-            </div>
+            </label>
           </div>
 
           {/* Navigation Buttons */}
@@ -387,8 +409,25 @@ export const SellWizard: React.FC = () => {
                 {sellWizard.isScanning ? t('AI Computer Vision Screening in Progress...', 'एआई विज़न जांच जारी है...') : t('AI Quality Assessment Report', 'एआई गुणवत्ता मूल्यांकन रिपोर्ट')}
               </h2>
             </div>
-            <span className="text-xs text-gray-400 font-mono">Model: AgriVision-v3.8</span>
+            {!sellWizard.isScanning && sellWizard.aiAssessment && (
+              <span
+                className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full font-mono ${
+                  sellWizard.aiAssessment.aiSource === 'live'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}
+              >
+                {sellWizard.aiAssessment.aiSource === 'live' ? '● LIVE GLM VISION' : '● DEMO MODE'}
+              </span>
+            )}
           </div>
+
+          {!sellWizard.isScanning && sellWizard.aiError && (
+            <div className="flex items-start space-x-2 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl p-3">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{sellWizard.aiError}</span>
+            </div>
+          )}
 
           {/* Scanning Animation State */}
           {sellWizard.isScanning ? (
