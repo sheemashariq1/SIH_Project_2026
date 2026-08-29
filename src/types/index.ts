@@ -36,7 +36,7 @@ export interface AIQualityAssessment {
   analyzedAt: string;
   imageUrl?: string;
   isOverridden?: boolean;
-  /** 'live' = real GLM computer-vision inference. 'demo' = local fallback estimate. */
+  /** 'live' = real Gemini computer-vision inference. 'demo' = local fallback estimate. */
   aiSource?: 'live' | 'demo';
 }
 
