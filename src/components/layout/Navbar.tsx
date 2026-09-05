@@ -25,6 +25,7 @@ export const Navbar: React.FC = () => {
     notifications,
     unreadNotifsCount,
     markNotificationRead,
+    markAllNotificationsRead,
     farmerTab,
     setFarmerTab,
     sellWizard,
@@ -181,9 +182,18 @@ export const Navbar: React.FC = () => {
                         {t('Live Activity & Alerts', 'लाइव सूचनाएं व अलर्ट')}
                       </h4>
                     </div>
-                    <span className="text-[11px] text-gray-500 font-medium">
-                      {unreadNotifsCount} {t('new', 'नए')}
-                    </span>
+                    {unreadNotifsCount > 0 ? (
+                      <button
+                        onClick={() => markAllNotificationsRead()}
+                        className="text-[11px] text-emerald-700 font-bold hover:underline"
+                      >
+                        {t('Mark all read', 'सभी पढ़ा हुआ चिह्नित करें')}
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 font-medium">
+                        {t('All caught up', 'सब पढ़ लिया गया')}
+                      </span>
+                    )}
                   </div>
 
                   <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 px-2 py-1">
@@ -203,13 +213,13 @@ export const Navbar: React.FC = () => {
                       >
                         <div className="flex items-start justify-between">
                           <p className="text-xs font-bold text-[#14532D] flex items-center space-x-1">
-                            <span>{n.title}</span>
+                            <span>{t(n.title, n.titleHi)}</span>
                           </p>
                           <span className="text-[10px] text-gray-400 font-mono ml-2 whitespace-nowrap">
                             {n.timestamp}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">{n.message}</p>
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t(n.message, n.messageHi)}</p>
                       </div>
                     ))}
                   </div>

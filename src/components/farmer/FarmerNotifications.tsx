@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Bell,
   CheckCircle2,
@@ -12,7 +12,16 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const FarmerNotifications: React.FC = () => {
-  const { notifications, markNotificationRead, setFarmerTab, t } = useApp();
+  const { notifications, markNotificationRead, markAllNotificationsRead, setFarmerTab, t } = useApp();
+
+  // Visiting this page is a strong enough signal that the farmer has "seen"
+  // their notifications — auto-clear the unread badge, the same way most
+  // notification centers behave once opened, rather than requiring every
+  // single card to be clicked individually.
+  useEffect(() => {
+    markAllNotificationsRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 max-w-4xl mx-auto">
