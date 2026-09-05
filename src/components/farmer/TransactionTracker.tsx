@@ -24,14 +24,7 @@ export const TransactionTracker: React.FC = () => {
   const [disputeSuccess, setDisputeSuccess] = useState(false);
 
   const txn = transactions.find((tr) => tr.id === selectedTxnId) || transactions[0];
-
-  const stagesList = [
-    { num: 1, title: t('Deal Accepted', 'सौदा स्वीकृत'), desc: t('Mutual digital signature recorded', 'डिजिटल अनुबंध हस्ताक्षरित') },
-    { num: 2, title: t('Payment Secured', 'भुगतान एस्क्रो में सुरक्षित'), desc: t('100% funds held in bank escrow', 'राशि सुरक्षित एस्क्रो में जमा') },
-    { num: 3, title: t('Logistics & Pickup', 'परिवहन व उठान'), desc: t('GPS Mini Truck dispatched to farm', 'वाहन खेत के लिए रवाना') },
-    { num: 4, title: t('Dock Weighment', 'वजन व गुणवत्ता जांच'), desc: t('Weighbridge slip & laboratory check', 'कांटा पर्ची व लैब मिलान') },
-    { num: 5, title: t('Payment Released', 'खाते में राशि अंतरित'), desc: t('Instant NEFT/UPI settlement', 'सीधे बैंक खाते में भुगतान') }
-  ];
+  const totalStages = txn.stages.length;
 
   const handleDownloadInvoice = () => {
     const element = document.createElement('a');
@@ -40,17 +33,17 @@ export const TransactionTracker: React.FC = () => {
       `KISANCONNECT DIGITAL SETTLEMENT & ESCROW INVOICE\n` +
       `Transaction ID: ${txn.id}\n` +
       `Date: ${new Date().toLocaleDateString()}\n` +
-      `Buyer: ${txn.buyerName}\n` +
-      `Farmer: Ramesh Kumar (Karnal, HR)\n` +
+      `Buyer: ${txn.buyerName} (${txn.buyerCompany})\n` +
+      `Farmer: ${txn.farmerName}\n` +
       `Crop: ${txn.cropName} (${txn.quantityKg} KG)\n` +
-      `Agreed Rate: ₹${txn.agreedPricePerQuintal}/quintal\n` +
+      `Agreed Rate: ₹${txn.finalPricePerQuintal}/quintal\n` +
       `--------------------------------------------------\n` +
-      `Gross Amount: ₹${txn.grossAmount.toLocaleString('en-IN')}\n` +
-      `Transport Deductions: ₹${txn.transportFee}\n` +
+      `Gross Amount: ₹${txn.grossValue.toLocaleString('en-IN')}\n` +
+      `Transport Deductions: ₹${txn.transportCost}\n` +
+      `Storage Deductions: ₹${txn.storageCost}\n` +
       `Platform Fee (0% Promotional): ₹${txn.platformFee}\n` +
-      `Net Settlement Amount: ₹${txn.netAmountToFarmer.toLocaleString('en-IN')}\n` +
-      `Bank Account: HDFC Bank A/c ending in **8921\n` +
-      `Status: ESCROW_SECURED_VERIFIED\n` +
+      `Net Settlement Amount: ₹${txn.estimatedNetRealization.toLocaleString('en-IN')}\n` +
+      `Status: ${txn.paymentStatus}\n` +
       `==================================================\n`
     ], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
@@ -90,9 +83,9 @@ export const TransactionTracker: React.FC = () => {
               onChange={(e) => setSelectedTxnId(e.target.value)}
               className="p-2 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 shadow-xs"
             >
-              {transactions.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.id} ({t.cropName})
+              {transactions.map((tOpt) => (
+                <option key={tOpt.id} value={tOpt.id}>
+                  {tOpt.id} ({tOpt.cropName})
                 </option>
               ))}
             </select>
@@ -109,48 +102,48 @@ export const TransactionTracker: React.FC = () => {
               <span className="font-mono text-xs font-extrabold text-emerald-900 bg-emerald-200/80 px-2 py-0.5 rounded-md">
                 {txn.id}
               </span>
-              <span className="text-xs text-gray-500 font-medium">Created on {txn.createdAt}</span>
+              <span className="text-xs text-gray-500 font-medium">Expected Pickup: {txn.pickupDate}</span>
             </div>
             <h2 className="font-heading text-2xl font-extrabold text-gray-900 mt-1">
               {txn.cropName} • {txn.quantityKg} KG
             </h2>
             <p className="text-xs text-emerald-900 font-bold mt-0.5">
-              Buyer: <span className="underline">{txn.buyerName}</span> (Agreed Rate: ₹{txn.agreedPricePerQuintal}/q)
+              Buyer: <span className="underline">{txn.buyerName}</span> (Agreed Rate: ₹{txn.finalPricePerQuintal}/q)
             </p>
           </div>
 
           <div className="text-right sm:border-l sm:border-emerald-200 sm:pl-6">
             <span className="text-xs text-gray-500 block">{t('Net Payout to Farmer', 'किसान को शुद्ध देय राशि')}</span>
             <span className="font-heading text-3xl font-extrabold text-[#14532D]">
-              ₹{txn.netAmountToFarmer.toLocaleString('en-IN')}
+              ₹{txn.estimatedNetRealization.toLocaleString('en-IN')}
             </span>
             <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
-              Bank A/c Ending **8921
+              Status: {txn.paymentStatus.replace('_', ' ')}
             </span>
           </div>
         </div>
 
-        {/* 5-STAGE INTERACTIVE VISUAL STEPPER */}
+        {/* INTERACTIVE VISUAL STEPPER (driven by the real per-transaction stages) */}
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
             <h3 className="font-heading font-extrabold text-sm text-gray-900 uppercase tracking-wider">
-              {t('5-Stage Verified Transaction Lifecycle', '5-चरणीय सत्यापन प्रगति')}
+              {t('Verified Transaction Lifecycle', 'सत्यापन प्रगति')}
             </h3>
             <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-              Current: Stage {txn.currentStage} of 5
+              Current: Stage {txn.currentStage + 1} of {totalStages}
             </span>
           </div>
 
           {/* Stepper Pipeline */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {stagesList.map((st) => {
-              const isPassed = st.num < txn.currentStage;
-              const isCurrent = st.num === txn.currentStage;
-              const isFuture = st.num > txn.currentStage;
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {txn.stages.map((st, idx) => {
+              const isPassed = idx < txn.currentStage || st.completed;
+              const isCurrent = idx === txn.currentStage;
+              const isFuture = idx > txn.currentStage;
 
               return (
                 <div
-                  key={st.num}
+                  key={`${txn.id}-stage-${idx}`}
                   className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
                     isPassed
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-950 shadow-xs'
@@ -161,7 +154,7 @@ export const TransactionTracker: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-mono font-bold">0{st.num}</span>
+                      <span className="text-xs font-mono font-bold">0{idx + 1}</span>
                       {isPassed ? (
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       ) : isCurrent ? (
@@ -172,13 +165,13 @@ export const TransactionTracker: React.FC = () => {
                     </div>
 
                     <h4 className="font-heading font-extrabold text-sm text-gray-900 leading-tight">
-                      {st.title}
+                      {st.name}
                     </h4>
-                    <p className="text-[11px] text-gray-600 mt-1 leading-snug">{st.desc}</p>
+                    <p className="text-[11px] text-gray-600 mt-1 leading-snug">{st.description}</p>
                   </div>
 
                   <div className="mt-3 pt-2 border-t border-black/5 text-[10px] font-bold">
-                    {isPassed && <span className="text-emerald-800">✓ Completed</span>}
+                    {isPassed && <span className="text-emerald-800">✓ Completed{st.date ? ` (${st.date})` : ''}</span>}
                     {isCurrent && <span className="text-amber-800 animate-pulse">● Active Stage</span>}
                     {isFuture && <span className="text-gray-400">Upcoming</span>}
                   </div>
@@ -199,20 +192,26 @@ export const TransactionTracker: React.FC = () => {
 
             <div className="space-y-2 text-xs">
               <div className="flex justify-between text-gray-600">
-                <span>Gross Produce Value ({txn.quantityKg} KG @ ₹{txn.agreedPricePerQuintal}/q)</span>
-                <span className="font-bold text-gray-900">₹{txn.grossAmount.toLocaleString('en-IN')}</span>
+                <span>Gross Produce Value ({txn.quantityKg} KG @ ₹{txn.finalPricePerQuintal}/q)</span>
+                <span className="font-bold text-gray-900">₹{txn.grossValue.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-rose-600">
                 <span>Integrated Logistics / Transport Freight</span>
-                <span>− ₹{txn.transportFee}</span>
+                <span>− ₹{txn.transportCost}</span>
               </div>
+              {txn.storageCost > 0 && (
+                <div className="flex justify-between text-rose-600">
+                  <span>Certified Storage / Warehousing Fee</span>
+                  <span>− ₹{txn.storageCost}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-500">
                 <span>Platform Commission (Promotional Waiver)</span>
-                <span>₹0</span>
+                <span>₹{txn.platformFee}</span>
               </div>
               <div className="pt-2 border-t border-gray-300 flex justify-between text-sm font-extrabold text-[#14532D]">
                 <span>Total Net Release to Farmer:</span>
-                <span>₹{txn.netAmountToFarmer.toLocaleString('en-IN')}</span>
+                <span>₹{txn.estimatedNetRealization.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -250,7 +249,7 @@ export const TransactionTracker: React.FC = () => {
               </button>
 
               {/* Dev/Demo Step Advancer */}
-              {txn.currentStage < 5 && (
+              {txn.currentStage < totalStages - 1 && (
                 <button
                   onClick={() => advanceTransactionStage(txn.id)}
                   className="w-full py-2 bg-[#EAB308] hover:bg-[#FACC15] text-[#14532D] font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-1"

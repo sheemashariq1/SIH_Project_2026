@@ -42,16 +42,16 @@ export const FarmerNotifications: React.FC = () => {
           let Icon = Bell;
           let iconBg = 'bg-blue-100 text-blue-800';
 
-          if (notif.type === 'offer') {
+          if (notif.type === 'offer' || notif.type === 'counter') {
             Icon = Handshake;
             iconBg = 'bg-amber-100 text-amber-800';
           } else if (notif.type === 'weather') {
             Icon = AlertTriangle;
             iconBg = 'bg-rose-100 text-rose-800';
-          } else if (notif.type === 'price_alert') {
+          } else if (notif.type === 'market') {
             Icon = TrendingUp;
             iconBg = 'bg-emerald-100 text-emerald-800';
-          } else if (notif.type === 'transaction') {
+          } else if (notif.type === 'payment' || notif.type === 'logistics') {
             Icon = CheckCircle2;
             iconBg = 'bg-emerald-100 text-emerald-800';
           }

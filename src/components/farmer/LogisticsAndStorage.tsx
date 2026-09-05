@@ -23,14 +23,16 @@ export const LogisticsAndStorage: React.FC = () => {
   const [selectedTransportId, setSelectedTransportId] = useState(transportFleet[0].id);
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
 
-  const handleBookTransport = (tName: string) => {
-    setBookingSuccess(`Transport Booking Confirmed! ${tName} has been assigned to pickup from Village Taraori (Karnal). Driver ETA: 45 Mins.`);
-    setTimeout(() => setBookingSuccess(null), 5000);
+  const handleBookTransport = (vehicle: { name: string; driverName: string; driverPhone: string }) => {
+    setBookingSuccess(
+      `Transport Booking Confirmed! ${vehicle.name} has been assigned to pickup from Village Taraori (Karnal). Driver: ${vehicle.driverName}${vehicle.driverPhone !== '—' ? ` (📞 ${vehicle.driverPhone})` : ''} • ETA: 45 Mins.`
+    );
+    setTimeout(() => setBookingSuccess(null), 6000);
   };
 
-  const handleBookStorage = (sName: string) => {
-    setBookingSuccess(`Storage Bay Reserved at ${sName}! E-Warehouse Receipt (e-NWR) generated.`);
-    setTimeout(() => setBookingSuccess(null), 5000);
+  const handleBookStorage = (s: { name: string; contact: string }) => {
+    setBookingSuccess(`Storage Bay Reserved at ${s.name}! E-Warehouse Receipt (e-NWR) generated. Warehouse Manager Contact: 📞 ${s.contact}`);
+    setTimeout(() => setBookingSuccess(null), 6000);
   };
 
   return (
@@ -118,6 +120,10 @@ export const LogisticsAndStorage: React.FC = () => {
                     <p className="text-xs text-gray-500 mt-0.5">
                       Max Payload: <span className="font-bold text-gray-700">{vehicle.capacityKg.toLocaleString()} KG</span>
                     </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      🧑‍✈️ Driver: <span className="font-bold text-gray-700">{vehicle.driverName}</span>
+                      {vehicle.driverPhone !== '—' && <span className="ml-1">📞 {vehicle.driverPhone}</span>}
+                    </p>
 
                     <div className="mt-4 p-3 bg-gray-50 rounded-2xl space-y-1.5 text-xs">
                       <div className="flex justify-between text-gray-600">
@@ -138,7 +144,7 @@ export const LogisticsAndStorage: React.FC = () => {
                   <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-[11px] text-gray-400 font-mono">GPS Verified</span>
                     <button
-                      onClick={() => handleBookTransport(vehicle.name)}
+                      onClick={() => handleBookTransport(vehicle)}
                       className="px-4 py-2 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow-xs transition-transform active:scale-95 flex items-center space-x-1"
                     >
                       <span>{t('Dispatch Vehicle →', 'वाहन बुक करें →')}</span>
@@ -181,22 +187,25 @@ export const LogisticsAndStorage: React.FC = () => {
                     {s.name}
                   </h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    📍 {s.location} • Type: {s.type}
+                    📍 {s.distanceKm} km away • Type: {s.type}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    📞 Warehouse Contact: <span className="font-bold text-gray-700">{s.contact}</span>
                   </p>
 
                   <div className="mt-4 p-3 bg-gray-50 rounded-2xl space-y-1.5 text-xs">
                     <div className="flex justify-between text-gray-600">
-                      <span>Monthly Rent (per Qtl)</span>
-                      <span className="font-extrabold text-[#14532D]">₹{s.ratePerMonth}/mth</span>
+                      <span>Rate (per Qtl / day)</span>
+                      <span className="font-extrabold text-[#14532D]">₹{s.ratePerDay}/day</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Available Capacity</span>
-                      <span className="font-bold text-gray-900">{s.availableCapacityTons} / {s.capacityTons} Tonnes</span>
+                      <span className="font-bold text-gray-900">{s.availableTonnes} / {s.capacityTonnes} Tonnes</span>
                     </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {s.features.map((feat, i) => (
+                    {[s.type, `${s.rating}★ Rated`, 'e-NWR Enabled'].map((feat, i) => (
                       <span
                         key={i}
                         className="bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md"
@@ -209,12 +218,12 @@ export const LogisticsAndStorage: React.FC = () => {
 
                 <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-gray-500 block">500 KG Lot / 30d</span>
-                    <span className="font-bold text-xs text-gray-900">₹{s.ratePerMonth} Total</span>
+                    <span className="text-[10px] text-gray-500 block">5 Qtl Lot / 30d</span>
+                    <span className="font-bold text-xs text-gray-900">₹{s.ratePerDay * 30 * 5} Total</span>
                   </div>
 
                   <button
-                    onClick={() => handleBookStorage(s.name)}
+                    onClick={() => handleBookStorage(s)}
                     className="px-4 py-2 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow-xs transition-transform active:scale-95 flex items-center space-x-1"
                   >
                     <span>{t('Reserve Bay →', 'स्थान आरक्षित करें →')}</span>

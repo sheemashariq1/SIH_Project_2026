@@ -91,7 +91,6 @@ export const AICropScanPage: React.FC = () => {
   };
 
   const handleFileSelected = async (file: File) => {
-    if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     const targetCrop = CROPS_DATA.find((c) => c.id === selectedCropId) || CROPS_DATA[0];

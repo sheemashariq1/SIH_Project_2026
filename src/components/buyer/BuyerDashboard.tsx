@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShoppingBag,
   Search,
@@ -25,13 +25,20 @@ export const BuyerDashboard: React.FC = () => {
     listings,
     offers,
     transactions,
-    addBuyerOffer,
+    createBuyerOffer,
     sendCounterOffer,
     advanceTransactionStage,
+    homeSignal,
     t
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'bids' | 'deals' | 'escrow'>('browse');
+
+  // Reset to the default tab whenever the Navbar's "Back" button is pressed.
+  useEffect(() => {
+    setActiveTab('browse');
+  }, [homeSignal]);
+
   const [selectedCropFilter, setSelectedCropFilter] = useState('All');
   const [selectedGradeFilter, setSelectedGradeFilter] = useState('All');
   const [selectedListingForBid, setSelectedListingForBid] = useState<Listing | null>(null);
@@ -56,26 +63,7 @@ export const BuyerDashboard: React.FC = () => {
     e.preventDefault();
     if (!selectedListingForBid) return;
 
-    addBuyerOffer({
-      listingId: selectedListingForBid.id,
-      buyerName: 'ABC Food Processors Ltd',
-      buyerVerified: true,
-      cropName: selectedListingForBid.cropName,
-      quantityKg: selectedListingForBid.quantityKg,
-      currentOfferPrice: bidPrice,
-      pickupIncluded: true,
-      initialOfferPrice: bidPrice,
-      history: [
-        {
-          id: `msg-${Date.now()}`,
-          sender: 'buyer',
-          senderName: 'ABC Food Processors Ltd',
-          pricePerQuintal: bidPrice,
-          message: bidNote || `We offer ₹${bidPrice}/quintal with full automated pickup from your farm.`,
-          timestamp: 'Just now'
-        }
-      ]
-    });
+    createBuyerOffer(selectedListingForBid.id, bidPrice, bidNote);
 
     setBidSuccess(true);
     setTimeout(() => {
@@ -454,18 +442,18 @@ export const BuyerDashboard: React.FC = () => {
                         <span className="font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border">
                           {tr.id}
                         </span>
-                        <span className="text-xs text-gray-500 font-medium">Stage {tr.currentStage} of 5</span>
+                        <span className="text-xs text-gray-500 font-medium">Stage {tr.currentStage + 1} of {tr.stages.length}</span>
                       </div>
                       <h4 className="font-heading font-bold text-base text-gray-900 mt-1">
-                        {tr.cropName} • {tr.quantityKg} KG (Farmer: Ramesh Kumar)
+                        {tr.cropName} • {tr.quantityKg} KG (Farmer: {tr.farmerName})
                       </h4>
                       <p className="text-xs text-emerald-800 font-bold mt-0.5">
-                        Agreed Rate: ₹{tr.agreedPricePerQuintal}/quintal • Escrow Balance: ₹{tr.grossAmount.toLocaleString('en-IN')}
+                        Agreed Rate: ₹{tr.finalPricePerQuintal}/quintal • Escrow Balance: ₹{tr.grossValue.toLocaleString('en-IN')}
                       </p>
                     </div>
 
                     <div className="flex items-center space-x-2 self-end md:self-auto">
-                      {tr.currentStage < 5 ? (
+                      {tr.currentStage < tr.stages.length - 1 ? (
                         <button
                           onClick={() => advanceTransactionStage(tr.id)}
                           className="px-4 py-2 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow-xs"

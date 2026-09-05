@@ -34,7 +34,13 @@ export const OffersAndBargaining: React.FC = () => {
   const [counterMessage, setCounterMessage] = useState('');
   const [isCounterModalOpen, setIsCounterModalOpen] = useState(false);
 
-  const selectedOffer = activeOffer || offers[0];
+  // IMPORTANT: derive the selected offer from the live `offers` array by id,
+  // rather than holding onto the separate `activeOffer` object directly.
+  // `activeOffer` only changes when explicitly set, so after sendCounterOffer
+  // / the buyer's auto-reply updates `offers`, the *object* referenced by
+  // `activeOffer` goes stale. Re-deriving here means the negotiation panel
+  // always reflects the latest price and message history.
+  const selectedOffer = offers.find((o) => o.id === activeOffer?.id) || offers[0];
 
   const handleSendCounter = (e: React.FormEvent) => {
     e.preventDefault();

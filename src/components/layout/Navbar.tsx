@@ -8,7 +8,8 @@ import {
   ChevronDown,
   LogOut,
   Sparkles,
-  MapPin
+  MapPin,
+  ArrowLeft
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -23,35 +24,57 @@ export const Navbar: React.FC = () => {
     notifications,
     unreadNotifsCount,
     markNotificationRead,
+    farmerTab,
     setFarmerTab,
+    sellWizard,
     setIsAuthOpen,
-    setAuthRole
+    setAuthRole,
+    goToRoleHome
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  // The Back button is only meaningful once inside a role (not on landing),
+  // and we hide it if the farmer is already sitting at their home tab with
+  // no wizard progress to unwind — nothing to go "back" to in that case.
+  const showBackButton =
+    role !== 'landing' &&
+    !(role === 'farmer' && farmerTab === 'home' && sellWizard.step <= 1);
+
   return (
     <header className="sticky top-0 z-40 bg-[#14532D] text-white shadow-md border-b border-[#1E6B3C]/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand / Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole('landing')}>
-            <div className="w-10 h-10 rounded-xl bg-[#EAB308] text-[#14532D] flex items-center justify-center shadow-inner font-bold text-xl">
-              <Sprout className="w-6 h-6 text-[#14532D]" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-heading font-extrabold text-xl tracking-tight text-white">
-                  Kisan<span className="text-[#FACC15]">Connect</span>
-                </span>
-                <span className="bg-[#1E6B3C] text-emerald-100 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border border-emerald-400/30">
-                  SIH Pro
-                </span>
+          {/* Brand / Logo + Back Button */}
+          <div className="flex items-center space-x-2">
+            {showBackButton && (
+              <button
+                onClick={goToRoleHome}
+                title={t('Back', 'पीछे')}
+                className="flex items-center space-x-1 bg-[#0F3E22] hover:bg-[#1E6B3C] text-emerald-100 text-xs font-bold px-2.5 py-2 rounded-xl border border-emerald-500/30 transition-colors mr-1"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('Back', 'पीछे')}</span>
+              </button>
+            )}
+            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole('landing')}>
+              <div className="w-10 h-10 rounded-xl bg-[#EAB308] text-[#14532D] flex items-center justify-center shadow-inner font-bold text-xl">
+                <Sprout className="w-6 h-6 text-[#14532D]" />
               </div>
-              <p className="text-[11px] text-emerald-200/80 font-medium hidden sm:block">
-                {t('Your Crop. Your Market. Your Choice.', 'आपकी फसल. आपका बाज़ार. आपका फैसला.')}
-              </p>
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-heading font-extrabold text-xl tracking-tight text-white">
+                    Kisan<span className="text-[#FACC15]">Connect</span>
+                  </span>
+                  <span className="bg-[#1E6B3C] text-emerald-100 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border border-emerald-400/30">
+                    SIH Pro
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-200/80 font-medium hidden sm:block">
+                  {t('Your Crop. Your Market. Your Choice.', 'आपकी फसल. आपका बाज़ार. आपका फैसला.')}
+                </p>
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   Users,
@@ -19,9 +19,14 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const AdminDashboard: React.FC = () => {
-  const { listings, transactions, t } = useApp();
+  const { listings, transactions, homeSignal, t } = useApp();
 
   const [adminTab, setAdminTab] = useState<'overview' | 'kyc' | 'ai-health' | 'escrow-bank' | 'disputes'>('overview');
+
+  // Reset to the default tab whenever the Navbar's "Back" button is pressed.
+  useEffect(() => {
+    setAdminTab('overview');
+  }, [homeSignal]);
   const [kycApprovals, setKycApprovals] = useState([
     { id: 'KYC-881', name: 'Sukhwinder Singh', role: 'Farmer', location: 'Ambala, HR', doc: 'Aadhaar + Land Patta', status: 'Pending' },
     { id: 'KYC-882', name: 'Kisan Agro Processors', role: 'Corporate Buyer', location: 'Panipat, HR', doc: 'GST + FSSAI License', status: 'Pending' },
@@ -158,9 +163,9 @@ export const AdminDashboard: React.FC = () => {
 
                     <div className="text-right">
                       <span className="font-heading font-extrabold text-sm text-emerald-400">
-                        ₹{tr.grossAmount.toLocaleString('en-IN')}
+                        ₹{tr.grossValue.toLocaleString('en-IN')}
                       </span>
-                      <span className="text-[10px] text-gray-500 block">Stage {tr.currentStage}/5 Active</span>
+                      <span className="text-[10px] text-gray-500 block">Stage {tr.currentStage + 1}/{tr.stages.length} Active</span>
                     </div>
                   </div>
                 ))}

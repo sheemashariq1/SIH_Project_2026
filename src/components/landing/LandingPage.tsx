@@ -136,9 +136,9 @@ export const LandingPage: React.FC = () => {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ AI Scan (87/100)</span>
-                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ Net Realization</span>
-                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ Zero Middlemen</span>
+                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ {t('AI Scan (87/100)', 'एआई स्कैन (87/100)')}</span>
+                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ {t('Net Realization', 'शुद्ध प्राप्ति')}</span>
+                <span className="bg-[#0F3E22] px-2.5 py-1 rounded-lg border border-emerald-500/30">✓ {t('Zero Middlemen', 'बिना बिचौलिए')}</span>
               </div>
             </div>
 
@@ -180,9 +180,9 @@ export const LandingPage: React.FC = () => {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ AI Grade Reports</span>
-                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ Farmgate Sourcing</span>
-                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ Escrow Safety</span>
+                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ {t('AI Grade Reports', 'एआई गुणवत्ता रिपोर्ट')}</span>
+                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ {t('Farmgate Sourcing', 'सीधे खेत से खरीद')}</span>
+                <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">✓ {t('Escrow Safety', 'एस्क्रो सुरक्षा')}</span>
               </div>
             </div>
 

@@ -1,51 +1,50 @@
-# KisanConnect — Real Computer-Vision AI Setup (Gemini Vision)
+# KisanConnect — Real Computer-Vision AI Setup (GLM Vision)
 
-This patch switches the "AI Crop Quality Assessment" feature from GLM to
-**Google Gemini's vision model**, called through a Vercel Serverless
-Function so the API key never reaches the browser. It also fixes a couple of
-small bugs found while reviewing the previous patch (object-URL memory
-leaks on repeated photo uploads).
+This patch replaces the fully-simulated "AI Crop Quality Assessment" screens
+with a **real computer-vision model call** (GLM vision-language model from
+Zhipu AI / Z.ai), routed through a Vercel Serverless Function so the API key
+never reaches the browser.
 
-## What changed since the last patch
+## What changed
 
-| File | What changed |
+| File | What it does |
 |---|---|
-| `api/analyze-crop.js` | **Rewritten for Gemini.** Calls `gemini-2.5-flash` (or your chosen model) using Gemini's native `responseSchema` feature, which forces the model to return valid JSON matching our exact shape — more reliable than the old prompt-based JSON parsing. |
-| `.env.example` | Now documents `GEMINI_API_KEY` (+ optional `GEMINI_VISION_MODEL`, `GEMINI_API_BASE_URL`) instead of `GLM_API_KEY`. |
-| `src/lib/analyzeCrop.ts` | Wording updated (GLM → Gemini); no behavior change — it was already provider-agnostic. |
-| `src/components/farmer/AICropScanPage.tsx` | "GLM Vision" badge/text → "Gemini Vision". **Bug fix:** the preview `blob:` URL from a previous upload is now revoked before creating a new one (was leaking memory on repeated re-scans). |
-| `src/components/farmer/SellWizard.tsx` | "LIVE GLM VISION" badge → "LIVE GEMINI VISION". |
-| `src/context/AppContext.tsx` | **Bug fix:** `setWizardImage()` now revokes the previous `blob:` preview URL before creating a new one (same leak fix as above). |
-| `src/types/index.ts` | Comment wording only. |
-| `package.json` | Tidied dev scripts: `npm run dev` = plain Vite (frontend only); `npm run dev:api` = `vercel dev` (frontend **and** the real `/api/analyze-crop` function, for testing live AI locally). |
+| `api/analyze-crop.js` | **New.** Vercel serverless function. Receives a base64 photo, calls the GLM vision model server-side, validates the response, returns clean JSON. This is the only place `GLM_API_KEY` is used. |
+| `src/lib/analyzeCrop.ts` | **New.** Client helper: compresses the photo in-browser, calls `/api/analyze-crop`, and gracefully falls back to a clearly-labeled demo estimate if the call fails (missing key, offline, rate limit, etc.) so the app never breaks mid-demo. |
+| `src/components/farmer/AICropScanPage.tsx` | **Rewritten.** The upload area now actually works (click / drag-drop / camera capture) and photos are sent through the real pipeline. Sample pills still work for a quick demo. |
+| `src/components/farmer/SellWizard.tsx` | **Patched.** Step 2's "Upload Crop Sample Photo" box previously had **no click handler at all** — it was decorative. It's now a real file input + drag-and-drop. |
+| `src/context/AppContext.tsx` | **Patched.** `runAIScanForWizard()` used to always return the same hardcoded 87/100 "Grade A" result. It now calls the real analyzer and adds `setWizardImage()` + an `aiError` field for the UI. |
+| `src/types/index.ts` | Added optional `aiSource?: 'live' | 'demo'` field to `AIQualityAssessment` so the UI can show a "LIVE GLM VISION" vs "DEMO MODE" badge. |
+| `.env.example` | Swapped the unused `GEMINI_API_KEY` for `GLM_API_KEY` (+ optional model/base-url overrides). |
+| `package.json` | Removed the unused `@google/genai`, `express`, `dotenv` dependencies (nothing in the code ever called them); added `vercel` as a dev dependency so `npm run dev` can run the API route locally. |
 
-Nothing else in the app was touched — I reviewed the full `src/` tree for
-other non-functional buttons (empty `onClick`, dead `href="#"` links, leftover
-`console.log`/`TODO` markers) and didn't find any beyond what was already
-fixed in the previous patch.
+Everything else in your app is untouched.
 
 ---
 
-## 1. Get a Gemini API key (free)
+## 1. Get a GLM API key
 
-1. Go to **https://aistudio.google.com/apikey**.
-2. Sign in with a Google account and click **Create API key**.
-3. Copy it.
+1. Go to **https://open.bigmodel.cn/** (Zhipu AI / Z.ai's open platform) and create an account.
+2. Create an API key from your account/API-keys page.
+3. Copy it — you'll paste it into Vercel and your local `.env` in step 3.
 
-> Default model is `gemini-2.5-flash` — fast and vision-capable. If your key
-> doesn't have 2.5 access yet, set `GEMINI_VISION_MODEL=gemini-2.0-flash` in
-> your `.env` / Vercel env vars instead.
+> The default model is `glm-4.5v`. If your account only has access to the
+> older GLM-4V family, set `GLM_VISION_MODEL=glm-4v-plus` instead (see below).
 
 ## 2. Apply these files in VS Code
 
-1. Open your project folder in VS Code.
-2. Extract the new patch zip and copy its contents into your project root,
-   overwriting the matching files (same structure as before):
+1. Open your existing project folder (`kisanconnect-app`) in VS Code.
+2. Extract the patch zip you were given and copy its contents **into the
+   project root**, overwriting the matching files. In VS Code's Explorer you
+   can just drag the extracted `api`, `src`, files onto the project root and
+   choose "Replace" when prompted — the folder structure matches exactly:
    ```
    your-project/
-   ├── api/analyze-crop.js          <- replaced
+   ├── api/
+   │   └── analyze-crop.js          <- new
    ├── src/
-   │   ├── lib/analyzeCrop.ts       <- replaced
+   │   ├── lib/
+   │   │   └── analyzeCrop.ts       <- new
    │   ├── components/farmer/
    │   │   ├── AICropScanPage.tsx   <- replaced
    │   │   └── SellWizard.tsx       <- replaced
@@ -54,52 +53,72 @@ fixed in the previous patch.
    ├── .env.example                 <- replaced
    └── package.json                 <- replaced
    ```
-   Terminal shortcut (adjust paths):
+3. Open the VS Code integrated terminal (`` Ctrl+` ``) in the project root.
+
+## 3. Configure your local environment
+
+1. Copy the example env file:
    ```bash
-   cp -r ~/Downloads/kisanconnect-gemini-vision-patch/. ~/Projects/kisanconnect-app/
+   cp .env.example .env
    ```
+   (On Windows PowerShell: `copy .env.example .env`)
+2. Open `.env` and paste your real key:
+   ```
+   GLM_API_KEY="paste-your-real-key-here"
+   ```
+3. `.env` is already in `.gitignore` — it will **not** be committed. Good.
 
-## 3. Update your local `.env`
-
-Open your existing `.env` file and **replace** the old `GLM_API_KEY` line with:
-```
-GEMINI_API_KEY="paste-your-real-gemini-key-here"
-```
-(`.env` is already gitignored — it will not be committed.)
-
-## 4. Install & test locally
+## 4. Install dependencies & run locally
 
 ```bash
 npm install
-npm run dev:api      # runs `vercel dev` — serves the real /api/analyze-crop locally
+npm i -g vercel        # one-time global install, or skip and use `npx vercel dev`
+npm run dev
 ```
-Open the printed `localhost` URL, go to **AI Crop Quality Assessment**, and
-upload a real photo — you should see a **"✓ Live AI Verified"** /
-**"● LIVE GEMINI VISION"** badge if the key is working.
 
-(`npm run dev` still works for quick UI-only iteration, but AI calls will
-show "● DEMO MODE" since the API route isn't served by plain Vite.)
+`npm run dev` now runs `vercel dev`, which serves both the Vite frontend
+**and** the `/api/analyze-crop` serverless function locally on
+`http://localhost:3000`, so you can test real photo uploads before pushing.
 
-## 5. Update the key on Vercel
+If you just want the old plain-Vite dev server (frontend only, API calls will
+fall back to Demo Mode locally), use `npm run dev:vite-only` instead.
 
-1. Vercel dashboard → your project → **Settings → Environment Variables**.
-2. **Remove** `GLM_API_KEY` if you added it previously (optional cleanup).
-3. **Add** `GEMINI_API_KEY` = your real key → check Production, Preview, Development.
-4. Save. Redeploy (or just push — Vercel auto-deploys).
+## 5. Add the key to Vercel (for your deployed site)
 
-## 6. Commit and push
+Since your repo is already connected to Vercel:
+
+1. Go to your project on **vercel.com** → **Settings** → **Environment Variables**.
+2. Add:
+   - `GLM_API_KEY` = your real key → check **Production**, **Preview**, and **Development**.
+   - *(optional)* `GLM_VISION_MODEL` = `glm-4.5v` or `glm-4v-plus`.
+3. Save. Vercel will use this automatically on the next deploy — you do **not**
+   put this key in any file that gets committed to GitHub.
+
+## 6. Commit and push (for the team)
 
 ```bash
-git checkout -b feature/gemini-vision-ai
+git checkout -b feature/glm-vision-ai
 git add .
-git commit -m "Switch crop-quality AI vision from GLM to Gemini; fix preview URL memory leak"
-git push -u origin feature/gemini-vision-ai
+git commit -m "Wire real GLM computer-vision crop grading into AI scan + sell wizard"
+git push -u origin feature/glm-vision-ai
 ```
-Open a PR into your main branch as before.
 
-## Fallback behavior (unchanged)
+Then open a Pull Request into your main branch on the `SIH_Project_2026`
+GitHub repo so your teammates can review it. Once merged, Vercel will build
+and deploy automatically (as it already does for your repo), and the live
+site will use `GLM_API_KEY` from the Vercel dashboard.
 
-If `GEMINI_API_KEY` is missing, invalid, rate-limited, or the network call
-fails for any reason, the app automatically falls back to a clearly-labeled
-**"● DEMO MODE"** estimate instead of crashing — safe for teammates who
-haven't set up a key yet, and safe during a live demo if the network hiccups.
+**For teammates pulling this branch:** they just need to run `cp .env.example .env`
+and add their own `GLM_API_KEY` locally (or ask you for a shared dev key) —
+they do not need to touch Vercel settings to test locally with `vercel dev`.
+
+## How it behaves if something's misconfigured
+
+- No `GLM_API_KEY` set → the API route returns a clear error → the frontend
+  automatically shows a **"● DEMO MODE"** badge and a demo-estimate report
+  instead of crashing. Great for teammates who haven't set up a key yet.
+- Bad/expired key, rate limit, network issue → same graceful demo fallback,
+  with the specific error shown in a small amber banner on the report.
+- Everything configured correctly → you'll see **"✓ Live AI Verified"** /
+  **"● LIVE GLM VISION"** badges, and the quality score/grade/indicators come
+  directly from the model's inspection of the actual uploaded photo.

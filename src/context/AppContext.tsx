@@ -88,6 +88,7 @@ export interface SellWizardState {
   expectedPrice: number;
   selectedTransportId: string;
   selectedStorageId: string;
+  selectedMandiId: string;
 }
 
 interface AppContextType {
@@ -164,6 +165,10 @@ interface AppContextType {
     fpoName?: string;
   };
   loginAs: (role: 'farmer' | 'buyer' | 'admin') => void;
+
+  // Global "Back" navigation helper (used by Navbar back button)
+  homeSignal: number;
+  goToRoleHome: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -187,7 +192,8 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
   scanStepIndex: 0,
   expectedPrice: 2450,
   selectedTransportId: 'trans-mini',
-  selectedStorageId: 'store-greenstore'
+  selectedStorageId: 'store-greenstore',
+  selectedMandiId: 'mandi-karnal'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -221,6 +227,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auth
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<'farmer' | 'buyer' | 'admin'>('farmer');
+  const [homeSignal, setHomeSignal] = useState(0);
   const [currentUser] = useState({
     name: 'Rameshwar Singh',
     phone: '+91 98123 45678',
@@ -273,12 +280,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setWizardImage = (file: File) => {
-    // Revoke the previous blob preview URL (if any) before creating a new one,
-    // so repeated uploads/rescans don't leak memory. The default sample image
-    // is a remote https:// URL, not a blob: URL, so it's safely skipped.
-    if (sellWizard.imagePreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(sellWizard.imagePreview);
-    }
     const previewUrl = URL.createObjectURL(file);
     setSellWizard((prev) => ({
       ...prev,
@@ -364,7 +365,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'active',
       createdAt: 'Just now',
       harvestDate: sellWizard.harvestDate,
-      matchedBuyersCount: 4
+      matchedBuyersCount: 4,
+      farmerRating: 4.7
     };
 
     setListings((prev) => [newListing, ...prev]);
@@ -403,7 +405,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '🎉 Listing Published Live!',
+      titleHi: '🎉 लिस्टिंग प्रकाशित हुई!',
       message: `${newListing.cropName} is now visible. ABC Foods immediately sent an offer of ₹${sellWizard.expectedPrice - 20}/q.`,
+      messageHi: `${newListing.cropName} अब सभी खरीदारों को दिख रहा है। ABC Foods ने तुरंत ₹${sellWizard.expectedPrice - 20}/क्विंटल का ऑफर भेजा।`,
       actionTab: 'offers'
     });
 
@@ -456,7 +460,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             addNotification({
               type: 'counter',
               title: '💬 Buyer Counter Offer',
+              titleHi: '💬 खरीदार का काउंटर ऑफर',
               message: `${off.buyerName} replied with ₹${buyerCounterPrice}/q. Tap to review and confirm deal.`,
+              messageHi: `${off.buyerName} ने ₹${buyerCounterPrice}/क्विंटल के साथ जवाब दिया। सौदा देखने व पक्का करने के लिए टैप करें।`,
               actionTab: 'offers'
             });
           }, 1500);
@@ -542,7 +548,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'payment',
       title: '✅ Deal Confirmed!',
+      titleHi: '✅ सौदा पक्का हुआ!',
       message: `Deal locked with ${targetOffer.buyerName} at ₹${targetOffer.currentOfferPrice}/q. Escrow initialized.`,
+      messageHi: `${targetOffer.buyerName} के साथ ₹${targetOffer.currentOfferPrice}/क्विंटल पर सौदा पक्का हुआ। एस्क्रो शुरू किया गया।`,
       actionTab: 'txn'
     });
 
@@ -607,7 +615,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: '📋 Requirement Published',
+      titleHi: '📋 आवश्यकता प्रकाशित हुई',
       message: `Requirement for ${req.quantityKg} KG ${req.cropName} is active and matching with farmers.`,
+      messageHi: `${req.quantityKg} किलो ${req.cropName} की आवश्यकता सक्रिय है और किसानों से मिलान हो रहा है।`,
       actionTab: 'find'
     });
   };
@@ -652,7 +662,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '📤 Offer Submitted to Farmer',
+      titleHi: '📤 किसान को ऑफर भेजा गया',
       message: `Your offer of ₹${pricePerQuintal}/q was sent to ${targetListing.farmerName}.`,
+      messageHi: `आपका ₹${pricePerQuintal}/क्विंटल का ऑफर ${targetListing.farmerName} को भेजा गया।`,
       actionTab: 'offers'
     });
   };
@@ -661,7 +673,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: approved ? '✅ Verification Approved' : '❌ Verification Rejected',
+      titleHi: approved ? '✅ सत्यापन स्वीकृत' : '❌ सत्यापन अस्वीकृत',
       message: `${userRole === 'farmer' ? 'Farmer' : 'Buyer'} ID ${userId} status updated by Admin.`,
+      messageHi: `${userRole === 'farmer' ? 'किसान' : 'खरीदार'} ID ${userId} की स्थिति एडमिन द्वारा अपडेट की गई।`,
       actionTab: 'overview'
     });
   };
@@ -686,6 +700,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (roleToSet === 'farmer') setFarmerTab('home');
     if (roleToSet === 'buyer') setBuyerTab('dashboard');
     if (roleToSet === 'admin') setAdminTab('overview');
+  };
+
+  // Global "Back" button logic used by the Navbar. For the farmer role we can
+  // step back through the Sell Wizard or return to the farmer home tab. For
+  // buyer/admin (whose sub-tabs are managed locally inside those dashboards)
+  // we bump a signal that those components listen for to reset to their
+  // default view — this guarantees there is always a way back without a
+  // full page reload.
+  const goToRoleHome = () => {
+    if (role === 'farmer') {
+      if (farmerTab === 'sell' && sellWizard.step > 1) {
+        setSellWizard((prev) => ({ ...prev, step: prev.step - 1 }));
+      } else if (farmerTab !== 'home') {
+        setFarmerTab('home');
+      }
+    } else if (role === 'buyer' || role === 'admin') {
+      setHomeSignal((prev) => prev + 1);
+    }
   };
 
   return (
@@ -742,7 +774,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authRole,
         setAuthRole,
         currentUser,
-        loginAs
+        loginAs,
+        homeSignal,
+        goToRoleHome
       }}
     >
       {children}

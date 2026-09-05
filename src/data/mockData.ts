@@ -10,8 +10,18 @@ import {
   Transaction,
   BuyerRequirement,
   DisputeItem,
-  NotificationItem
+  NotificationItem,
+  StateDistrictMap
 } from '../types';
+
+// Maps each supported state to its list of selectable districts, so the
+// District dropdown always reflects the currently chosen State.
+export const STATE_DISTRICTS: StateDistrictMap = {
+  Haryana: ['Karnal', 'Panipat', 'Kurukshetra', 'Sonipat'],
+  Punjab: ['Ludhiana', 'Amritsar', 'Patiala', 'Jalandhar'],
+  'Uttar Pradesh': ['Meerut', 'Muzaffarnagar', 'Saharanpur', 'Bulandshahr'],
+  'Delhi NCR': ['Narela (Delhi)', 'Gurugram', 'Faridabad', 'Noida']
+};
 
 export const CROPS_DATA: CropDefinition[] = [
   // CROPS
@@ -119,6 +129,84 @@ export const CROPS_DATA: CropDefinition[] = [
     shelfLifeDays: 14,
     weatherSensitivity: 'medium'
   },
+  {
+    id: 'bajra',
+    name: 'Bajra (Pearl Millet)',
+    nameHi: 'बाजरा',
+    category: 'crops',
+    emoji: '🌾',
+    varieties: ['HHB 67 Improved', 'Pusa Composite 383', 'RHB 177', 'GHB 558'],
+    mandiAvgPrice: 2500,
+    unit: 'Quintal',
+    typicalYieldKg: 350,
+    shelfLifeDays: 150,
+    weatherSensitivity: 'low'
+  },
+  {
+    id: 'jowar',
+    name: 'Jowar (Sorghum)',
+    nameHi: 'ज्वार',
+    category: 'crops',
+    emoji: '🌾',
+    varieties: ['CSH 16', 'M 35-1 (Maldandi)', 'Phule Vasudha', 'CSV 216R'],
+    mandiAvgPrice: 3180,
+    unit: 'Quintal',
+    typicalYieldKg: 350,
+    shelfLifeDays: 150,
+    weatherSensitivity: 'low'
+  },
+  {
+    id: 'gram',
+    name: 'Chana (Gram)',
+    nameHi: 'चना',
+    category: 'crops',
+    emoji: '🫘',
+    varieties: ['Pusa 372', 'JG 11', 'RVG 202', 'GNG 1958'],
+    mandiAvgPrice: 5450,
+    unit: 'Quintal',
+    typicalYieldKg: 280,
+    shelfLifeDays: 180,
+    weatherSensitivity: 'low'
+  },
+  {
+    id: 'moong',
+    name: 'Moong (Green Gram)',
+    nameHi: 'मूंग',
+    category: 'crops',
+    emoji: '🫛',
+    varieties: ['Pusa Vishal', 'SML 668', 'IPM 2-3', 'Virat'],
+    mandiAvgPrice: 8100,
+    unit: 'Quintal',
+    typicalYieldKg: 220,
+    shelfLifeDays: 150,
+    weatherSensitivity: 'medium'
+  },
+  {
+    id: 'soybean',
+    name: 'Soybean',
+    nameHi: 'सोयाबीन',
+    category: 'crops',
+    emoji: '🌱',
+    varieties: ['JS 335', 'JS 95-60', 'NRC 37', 'RVS 2001-4'],
+    mandiAvgPrice: 4550,
+    unit: 'Quintal',
+    typicalYieldKg: 300,
+    shelfLifeDays: 150,
+    weatherSensitivity: 'medium'
+  },
+  {
+    id: 'groundnut',
+    name: 'Groundnut',
+    nameHi: 'मूंगफली',
+    category: 'crops',
+    emoji: '🥜',
+    varieties: ['TAG 24', 'GG 20', 'TG 37A', 'Girnar 4'],
+    mandiAvgPrice: 6300,
+    unit: 'Quintal',
+    typicalYieldKg: 320,
+    shelfLifeDays: 150,
+    weatherSensitivity: 'medium'
+  },
 
   // VEGETABLES
   {
@@ -212,6 +300,71 @@ export const CROPS_DATA: CropDefinition[] = [
     shelfLifeDays: 8,
     weatherSensitivity: 'medium'
   },
+  {
+    id: 'greenpeas',
+    name: 'Green Peas',
+    nameHi: 'मटर',
+    category: 'vegetables',
+    emoji: '🟢',
+    varieties: ['Arkel', 'Bonneville', 'Pusa Pragati', 'Kashi Nandini'],
+    mandiAvgPrice: 2100,
+    unit: 'Quintal',
+    typicalYieldKg: 250,
+    shelfLifeDays: 10,
+    weatherSensitivity: 'high'
+  },
+  {
+    id: 'chilli',
+    name: 'Green Chilli',
+    nameHi: 'हरी मिर्च',
+    category: 'vegetables',
+    emoji: '🌶️',
+    varieties: ['Pusa Jwala', 'G-4', 'Byadgi', 'Kashi Anmol'],
+    mandiAvgPrice: 3400,
+    unit: 'Quintal',
+    typicalYieldKg: 180,
+    shelfLifeDays: 12,
+    weatherSensitivity: 'high'
+  },
+  {
+    id: 'capsicum',
+    name: 'Capsicum',
+    nameHi: 'शिमला मिर्च',
+    category: 'vegetables',
+    emoji: '🫑',
+    varieties: ['California Wonder', 'Indra', 'Bharat', 'Yolo Wonder'],
+    mandiAvgPrice: 2900,
+    unit: 'Quintal',
+    typicalYieldKg: 200,
+    shelfLifeDays: 12,
+    weatherSensitivity: 'medium'
+  },
+  {
+    id: 'ginger',
+    name: 'Ginger',
+    nameHi: 'अदरक',
+    category: 'vegetables',
+    emoji: '🫚',
+    varieties: ['Maran', 'Rio-de-Janeiro', 'Nadia', 'Suprabha'],
+    mandiAvgPrice: 5800,
+    unit: 'Quintal',
+    typicalYieldKg: 300,
+    shelfLifeDays: 60,
+    weatherSensitivity: 'medium'
+  },
+  {
+    id: 'garlic',
+    name: 'Garlic',
+    nameHi: 'लहसुन',
+    category: 'vegetables',
+    emoji: '🧄',
+    varieties: ['Yamuna Safed', 'Agrifound White', 'G-282', 'Yamuna Safed-3'],
+    mandiAvgPrice: 7200,
+    unit: 'Quintal',
+    typicalYieldKg: 250,
+    shelfLifeDays: 90,
+    weatherSensitivity: 'low'
+  },
 
   // FRUITS
   {
@@ -304,6 +457,45 @@ export const CROPS_DATA: CropDefinition[] = [
     typicalYieldKg: 300,
     shelfLifeDays: 30,
     weatherSensitivity: 'medium'
+  },
+  {
+    id: 'papaya',
+    name: 'Papaya',
+    nameHi: 'पपीता',
+    category: 'fruits',
+    emoji: '🟠',
+    varieties: ['Red Lady', 'Taiwan 786', 'Pusa Dwarf', 'Coorg Honey Dew'],
+    mandiAvgPrice: 1650,
+    unit: 'Quintal',
+    typicalYieldKg: 700,
+    shelfLifeDays: 10,
+    weatherSensitivity: 'high'
+  },
+  {
+    id: 'watermelon',
+    name: 'Watermelon',
+    nameHi: 'तरबूज़',
+    category: 'fruits',
+    emoji: '🍉',
+    varieties: ['Sugar Baby', 'Asahi Yamato', 'Namdhari Madhu', 'Kiran'],
+    mandiAvgPrice: 1100,
+    unit: 'Quintal',
+    typicalYieldKg: 900,
+    shelfLifeDays: 15,
+    weatherSensitivity: 'medium'
+  },
+  {
+    id: 'litchi',
+    name: 'Litchi',
+    nameHi: 'लीची',
+    category: 'fruits',
+    emoji: '🍒',
+    varieties: ['Shahi Litchi', 'China Litchi', 'Bombai', 'Rose Scented'],
+    mandiAvgPrice: 8600,
+    unit: 'Quintal',
+    typicalYieldKg: 250,
+    shelfLifeDays: 7,
+    weatherSensitivity: 'high'
   }
 ];
 
@@ -355,6 +547,8 @@ export const INITIAL_MANDIS: MandiComparison[] = [
     id: 'mandi-karnal',
     name: 'Karnal Main Mandi (G.T. Road)',
     location: 'Karnal, Haryana',
+    state: 'Haryana',
+    district: 'Karnal',
     distanceKm: 14,
     pricePerQuintal: 2420,
     transportCost: 350,
@@ -367,6 +561,8 @@ export const INITIAL_MANDIS: MandiComparison[] = [
     id: 'mandi-panipat',
     name: 'Panipat Grain Market',
     location: 'Panipat, Haryana',
+    state: 'Haryana',
+    district: 'Panipat',
     distanceKm: 29,
     pricePerQuintal: 2390,
     transportCost: 520,
@@ -378,6 +574,8 @@ export const INITIAL_MANDIS: MandiComparison[] = [
     id: 'mandi-kurukshetra',
     name: 'Kurukshetra Anaj Mandi',
     location: 'Kurukshetra, Haryana',
+    state: 'Haryana',
+    district: 'Kurukshetra',
     distanceKm: 34,
     pricePerQuintal: 2410,
     transportCost: 610,
@@ -386,26 +584,176 @@ export const INITIAL_MANDIS: MandiComparison[] = [
     estimatedNetRealization: 11440
   },
   {
-    id: 'mandi-delhi',
-    name: 'Narela Terminal Mandi (Delhi)',
-    location: 'Narela, Delhi NCR',
-    distanceKm: 115,
-    pricePerQuintal: 2460,
-    transportCost: 1900,
-    arrivalsTonnes: 5800,
-    demandLevel: 'HIGH',
-    estimatedNetRealization: 10400
-  },
-  {
     id: 'mandi-sonipat',
     name: 'Sonipat Mandi',
     location: 'Sonipat, Haryana',
-    distanceKm: 78,
+    state: 'Haryana',
+    district: 'Sonipat',
+    distanceKm: 45,
     pricePerQuintal: 2405,
-    transportCost: 1250,
+    transportCost: 780,
     arrivalsTonnes: 1650,
     demandLevel: 'MODERATE',
     estimatedNetRealization: 10775
+  },
+  {
+    id: 'mandi-delhi-narela',
+    name: 'Narela Terminal Mandi (Delhi)',
+    location: 'Narela, Delhi NCR',
+    state: 'Delhi NCR',
+    district: 'Narela (Delhi)',
+    distanceKm: 60,
+    pricePerQuintal: 2460,
+    transportCost: 950,
+    arrivalsTonnes: 5800,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 11150,
+    isBestOpportunity: true
+  },
+  {
+    id: 'mandi-gurugram',
+    name: 'Gurugram Grain Market',
+    location: 'Gurugram, Delhi NCR',
+    state: 'Delhi NCR',
+    district: 'Gurugram',
+    distanceKm: 75,
+    pricePerQuintal: 2440,
+    transportCost: 1180,
+    arrivalsTonnes: 2100,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 10820
+  },
+  {
+    id: 'mandi-faridabad',
+    name: 'Faridabad Anaj Mandi',
+    location: 'Faridabad, Delhi NCR',
+    state: 'Delhi NCR',
+    district: 'Faridabad',
+    distanceKm: 82,
+    pricePerQuintal: 2415,
+    transportCost: 1240,
+    arrivalsTonnes: 1780,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 10530
+  },
+  {
+    id: 'mandi-noida',
+    name: 'Noida Sector 33 Mandi',
+    location: 'Noida, Delhi NCR',
+    state: 'Delhi NCR',
+    district: 'Noida',
+    distanceKm: 90,
+    pricePerQuintal: 2450,
+    transportCost: 1350,
+    arrivalsTonnes: 1990,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 10600
+  },
+  {
+    id: 'mandi-ludhiana',
+    name: 'Ludhiana Grain Market',
+    location: 'Ludhiana, Punjab',
+    state: 'Punjab',
+    district: 'Ludhiana',
+    distanceKm: 22,
+    pricePerQuintal: 2445,
+    transportCost: 420,
+    arrivalsTonnes: 3100,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 11480,
+    isBestOpportunity: true
+  },
+  {
+    id: 'mandi-amritsar',
+    name: 'Amritsar Anaj Mandi',
+    location: 'Amritsar, Punjab',
+    state: 'Punjab',
+    district: 'Amritsar',
+    distanceKm: 40,
+    pricePerQuintal: 2400,
+    transportCost: 680,
+    arrivalsTonnes: 2400,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 11020
+  },
+  {
+    id: 'mandi-patiala',
+    name: 'Patiala Grain Market',
+    location: 'Patiala, Punjab',
+    state: 'Punjab',
+    district: 'Patiala',
+    distanceKm: 33,
+    pricePerQuintal: 2415,
+    transportCost: 590,
+    arrivalsTonnes: 1950,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 11190
+  },
+  {
+    id: 'mandi-jalandhar',
+    name: 'Jalandhar Grain Market',
+    location: 'Jalandhar, Punjab',
+    state: 'Punjab',
+    district: 'Jalandhar',
+    distanceKm: 48,
+    pricePerQuintal: 2395,
+    transportCost: 720,
+    arrivalsTonnes: 1700,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 10850
+  },
+  {
+    id: 'mandi-meerut',
+    name: 'Meerut Anaj Mandi',
+    location: 'Meerut, Uttar Pradesh',
+    state: 'Uttar Pradesh',
+    district: 'Meerut',
+    distanceKm: 18,
+    pricePerQuintal: 2380,
+    transportCost: 390,
+    arrivalsTonnes: 2600,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 11150,
+    isBestOpportunity: true
+  },
+  {
+    id: 'mandi-muzaffarnagar',
+    name: 'Muzaffarnagar Grain Market',
+    location: 'Muzaffarnagar, Uttar Pradesh',
+    state: 'Uttar Pradesh',
+    district: 'Muzaffarnagar',
+    distanceKm: 27,
+    pricePerQuintal: 2360,
+    transportCost: 470,
+    arrivalsTonnes: 1580,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 10850
+  },
+  {
+    id: 'mandi-saharanpur',
+    name: 'Saharanpur Anaj Mandi',
+    location: 'Saharanpur, Uttar Pradesh',
+    state: 'Uttar Pradesh',
+    district: 'Saharanpur',
+    distanceKm: 55,
+    pricePerQuintal: 2340,
+    transportCost: 800,
+    arrivalsTonnes: 1320,
+    demandLevel: 'MODERATE',
+    estimatedNetRealization: 10380
+  },
+  {
+    id: 'mandi-bulandshahr',
+    name: 'Bulandshahr Grain Market',
+    location: 'Bulandshahr, Uttar Pradesh',
+    state: 'Uttar Pradesh',
+    district: 'Bulandshahr',
+    distanceKm: 62,
+    pricePerQuintal: 2355,
+    transportCost: 870,
+    arrivalsTonnes: 1410,
+    demandLevel: 'HIGH',
+    estimatedNetRealization: 10380
   }
 ];
 
@@ -454,7 +802,9 @@ export const TRANSPORT_FLEET: TransportOption[] = [
     baseCost: 250,
     perKmCost: 12,
     rating: 4.9,
-    eta: 'Within 45 mins'
+    eta: 'Within 45 mins',
+    driverName: 'Harpreet Singh',
+    driverPhone: '+91 98765 11220'
   },
   {
     id: 'trans-medium',
@@ -464,7 +814,9 @@ export const TRANSPORT_FLEET: TransportOption[] = [
     baseCost: 400,
     perKmCost: 18,
     rating: 4.7,
-    eta: 'Within 1.5 hours'
+    eta: 'Within 1.5 hours',
+    driverName: 'Sukhdev Rana',
+    driverPhone: '+91 98765 33481'
   },
   {
     id: 'trans-heavy',
@@ -474,7 +826,9 @@ export const TRANSPORT_FLEET: TransportOption[] = [
     baseCost: 550,
     perKmCost: 22,
     rating: 4.8,
-    eta: 'Within 2 hours'
+    eta: 'Within 2 hours',
+    driverName: 'Balwinder Kaur',
+    driverPhone: '+91 98765 90112'
   },
   {
     id: 'trans-self',
@@ -484,7 +838,9 @@ export const TRANSPORT_FLEET: TransportOption[] = [
     baseCost: 0,
     perKmCost: 8,
     rating: 5.0,
-    eta: 'Instant / Self-Scheduled'
+    eta: 'Instant / Self-Scheduled',
+    driverName: 'Self-Driven',
+    driverPhone: '—'
   }
 ];
 
@@ -524,7 +880,8 @@ export const INITIAL_LISTINGS: Listing[] = [
     status: 'under_deal',
     createdAt: '2026-08-28 08:30 AM',
     harvestDate: '2026-08-26',
-    matchedBuyersCount: 4
+    matchedBuyersCount: 4,
+    farmerRating: 4.8
   },
   {
     id: 'KC-POT-00125',
@@ -561,7 +918,8 @@ export const INITIAL_LISTINGS: Listing[] = [
     status: 'active',
     createdAt: '2026-08-27 11:15 AM',
     harvestDate: '2026-08-25',
-    matchedBuyersCount: 3
+    matchedBuyersCount: 3,
+    farmerRating: 4.6
   },
   {
     id: 'KC-TOM-00126',
@@ -598,7 +956,8 @@ export const INITIAL_LISTINGS: Listing[] = [
     status: 'active',
     createdAt: '2026-08-26 03:40 PM',
     harvestDate: '2026-08-26',
-    matchedBuyersCount: 5
+    matchedBuyersCount: 5,
+    farmerRating: 4.9
   }
 ];
 
@@ -869,7 +1228,9 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     id: 'notif-1',
     type: 'counter',
     title: '🤝 Counter Offer Received',
+    titleHi: '🤝 काउंटर ऑफर प्राप्त हुआ',
     message: 'ABC Foods offered ₹2,430/q for your Wheat (Grade A - 500 KG). Tap to view and accept.',
+    messageHi: 'ABC Foods ने आपके गेहूं (ग्रेड A - 500 किलो) के लिए ₹2,430/क्विंटल की पेशकश की है। देखने व स्वीकार करने के लिए टैप करें।',
     timestamp: '5m ago',
     read: false,
     actionTab: 'offers'
@@ -878,7 +1239,9 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     id: 'notif-2',
     type: 'weather',
     title: '🌧 Heavy Rainfall Risk in Karnal',
+    titleHi: '🌧 करनाल में भारी वर्षा का खतरा',
     message: '72% rain probability in 3 days. AI suggests selling Wheat within 72 hrs or booking covered storage.',
+    messageHi: '3 दिनों में 72% वर्षा की संभावना। एआई सुझाव देता है कि 72 घंटों के भीतर गेहूं बेचें या ढका हुआ भंडारण बुक करें।',
     timestamp: '1h ago',
     read: false,
     actionTab: 'weather'
@@ -887,7 +1250,9 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     id: 'notif-3',
     type: 'market',
     title: '📈 Wheat Market Price Up +6.4%',
+    titleHi: '📈 गेहूं का बाज़ार भाव +6.4% बढ़ा',
     message: 'Karnal mandi price increased to ₹2,420/q driven by robust regional processing demand.',
+    messageHi: 'क्षेत्रीय प्रसंस्करण मांग बढ़ने से करनाल मंडी भाव ₹2,420/क्विंटल हो गया।',
     timestamp: '3h ago',
     read: true,
     actionTab: 'market'
@@ -896,7 +1261,9 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     id: 'notif-4',
     type: 'offer',
     title: '💰 New Buyer Match Detected',
+    titleHi: '💰 नया खरीदार मिलान मिला',
     message: 'ITC Agri Business posted a new requirement matching your Grade A Wheat inventory.',
+    messageHi: 'ITC Agri Business ने आपके ग्रेड A गेहूं भंडार से मेल खाती एक नई आवश्यकता पोस्ट की है।',
     timestamp: '5h ago',
     read: true,
     actionTab: 'offers'

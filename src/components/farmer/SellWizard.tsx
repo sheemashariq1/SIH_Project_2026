@@ -22,6 +22,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { CROPS_DATA } from '../../data/mockData';
 import { CropCategory, CropDefinition } from '../../types';
+import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const SellWizard: React.FC = () => {
   const {
@@ -34,6 +35,7 @@ export const SellWizard: React.FC = () => {
     storageFacilities,
     transportFleet,
     weather,
+    language,
     t
   } = useApp();
 
@@ -176,16 +178,30 @@ export const SellWizard: React.FC = () => {
           </div>
 
           {/* Search bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('Search crop by name (e.g. Wheat, Potato, Tomato)...', 'फसल का नाम खोजें...')}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+          <div className="relative flex items-center space-x-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('Search crop by name (e.g. Wheat, Potato, Tomato)...', 'फसल का नाम खोजें...')}
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+            <VoiceInputButton
+              lang={language === 'hi' ? 'hi-IN' : 'en-IN'}
+              onResult={(transcript) => setSearchQuery(transcript)}
             />
           </div>
+          {filteredCrops.length === 0 && searchQuery.trim() !== '' && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              {t(
+                `No crop found matching "${searchQuery}". Try another category tab above, or a different spelling.`,
+                `"${searchQuery}" के लिए कोई फसल नहीं मिली। ऊपर दूसरी श्रेणी आज़माएं।`
+              )}
+            </p>
+          )}
 
           {/* Crops Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -403,11 +419,19 @@ export const SellWizard: React.FC = () => {
             <div>
               <div className="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full mb-1">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-                <span>AI-Assisted Quality Assessment</span>
+                <span>{t('AI-Assisted Quality Assessment', 'एआई-सहायित गुणवत्ता मूल्यांकन')}</span>
               </div>
               <h2 className="font-heading text-xl font-extrabold text-gray-900">
-                {sellWizard.isScanning ? t('AI Computer Vision Screening in Progress...', 'एआई विज़न जांच जारी है...') : t('AI Quality Assessment Report', 'एआई गुणवत्ता मूल्यांकन रिपोर्ट')}
+                {sellWizard.isScanning
+                  ? t('AI Computer Vision Screening in Progress...', 'एआई विज़न जांच जारी है...')
+                  : t('AI Quality Assessment Report', 'एआई गुणवत्ता मूल्यांकन रिपोर्ट')}
               </h2>
+              {!sellWizard.isScanning && sellWizard.crop && (
+                <p className="text-xs font-bold text-emerald-800 mt-1 flex items-center space-x-1">
+                  <span>{sellWizard.crop.emoji}</span>
+                  <span>{t('Crop Detected', 'पहचानी गई फसल')}: {sellWizard.crop.name} ({sellWizard.crop.nameHi}){sellWizard.variety ? ` — ${sellWizard.variety}` : ''}</span>
+                </p>
+              )}
             </div>
             {!sellWizard.isScanning && sellWizard.aiAssessment && (
               <span
@@ -417,7 +441,7 @@ export const SellWizard: React.FC = () => {
                     : 'bg-amber-100 text-amber-800 border border-amber-300'
                 }`}
               >
-                {sellWizard.aiAssessment.aiSource === 'live' ? '● LIVE GEMINI VISION' : '● DEMO MODE'}
+                {sellWizard.aiAssessment.aiSource === 'live' ? t('● LIVE GEMINI VISION', '● लाइव एआई विज़न') : t('● DEMO MODE', '● डेमो मोड')}
               </span>
             )}
           </div>
@@ -484,7 +508,7 @@ export const SellWizard: React.FC = () => {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between text-xs bg-[#0F3E22] px-3 py-2 rounded-xl border border-emerald-500/30">
-                    <span className="text-emerald-300">Confidence:</span>
+                    <span className="text-emerald-300">{t('Confidence:', 'विश्वास स्तर:')}</span>
                     <span className="font-mono font-bold text-[#FACC15]">
                       {sellWizard.aiAssessment?.confidence || 91}%
                     </span>
@@ -499,7 +523,7 @@ export const SellWizard: React.FC = () => {
                       <span className="font-heading text-xl font-bold text-gray-900">
                         {sellWizard.aiAssessment?.visibleDamagePercent || 8}%
                       </span>
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">Low / Acceptable</span>
+                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">{t('Low / Acceptable', 'न्यून / स्वीकार्य')}</span>
                     </div>
 
                     <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200">
@@ -507,7 +531,7 @@ export const SellWizard: React.FC = () => {
                       <span className="font-heading text-xl font-bold text-emerald-700">
                         {sellWizard.aiAssessment?.spoilageIndicator || 'LOW'}
                       </span>
-                      <span className="text-[10px] text-gray-500 block mt-0.5">Zero fungal mold</span>
+                      <span className="text-[10px] text-gray-500 block mt-0.5">{t('Zero fungal mold', 'फफूंद नहीं पाई गई')}</span>
                     </div>
 
                     <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200">
@@ -515,7 +539,7 @@ export const SellWizard: React.FC = () => {
                       <span className="font-heading text-xl font-bold text-gray-900">
                         {sellWizard.aiAssessment?.moistureContent || '11.4%'}
                       </span>
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">&lt; 12% Optimal</span>
+                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">{t('< 12% Optimal', '< 12% उत्तम')}</span>
                     </div>
                   </div>
 
@@ -550,7 +574,7 @@ export const SellWizard: React.FC = () => {
               <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center space-x-2 text-[11px] text-gray-500">
                 <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span>
-                  <strong>AI-Assisted Quality Assessment:</strong> Indicative decision-support result generated by computer vision algorithms for price discovery. Physical inspection at buyer dock remains standard.
+                  <strong>{t('AI-Assisted Quality Assessment:', 'एआई-सहायित गुणवत्ता मूल्यांकन:')}</strong> {t('Indicative decision-support result generated by computer vision algorithms for price discovery. Physical inspection at buyer dock remains standard.', 'यह मूल्यांकन एआई द्वारा तैयार एक संकेतात्मक निर्णय-सहायता परिणाम है। खरीदार डॉक पर भौतिक निरीक्षण मानक प्रक्रिया बना रहेगा।')}
                 </span>
               </div>
 
@@ -584,7 +608,7 @@ export const SellWizard: React.FC = () => {
             <div>
               <div className="inline-flex items-center space-x-1.5 bg-rose-100 text-rose-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full mb-1">
                 <CloudRain className="w-3.5 h-3.5 text-rose-600" />
-                <span>Weather & Regional Risk Intelligence</span>
+                <span>{t('Weather & Regional Risk Intelligence', 'मौसम व क्षेत्रीय जोखिम विश्लेषण')}</span>
               </div>
               <h2 className="font-heading text-xl font-extrabold text-gray-900">
                 {t('Weather Impact & Nearby Mandi Comparison', 'मौसम का प्रभाव व नज़दीकी मंडियों की तुलना')}
@@ -619,45 +643,56 @@ export const SellWizard: React.FC = () => {
             </h3>
 
             <div className="space-y-2.5">
-              {mandis.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    m.isBestOpportunity
-                      ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
-                      : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-heading font-bold text-sm text-gray-900">{m.name}</h4>
-                      {m.isBestOpportunity && (
-                        <span className="bg-[#EAB308] text-[#14532D] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                          🏆 {t('BEST ESTIMATED OPPORTUNITY', 'सर्वश्रेष्ठ अवसर')}
+              {mandis.map((m) => {
+                const isSelected = sellWizard.selectedMandiId === m.id;
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => setSellWizard((prev) => ({ ...prev, selectedMandiId: m.id }))}
+                    className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
+                        : 'border-gray-200 bg-gray-50 hover:border-emerald-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-heading font-bold text-sm text-gray-900">{m.name}</h4>
+                        {isSelected ? (
+                          <span className="bg-[#EAB308] text-[#14532D] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                            🏆 {t('SELECTED', 'चयनित')}
+                          </span>
+                        ) : m.isBestOpportunity ? (
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                            {t('SUGGESTED', 'सुझाया गया')}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {m.distanceKm} km away • Transport Cost: ₹{m.transportCost} • Demand: {m.demandLevel}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-4 self-end sm:self-auto">
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500 block">{t('Mandi Price', 'मंडी भाव')}</span>
+                        <span className="font-extrabold text-gray-900">₹{m.pricePerQuintal}/q</span>
+                      </div>
+
+                      <div className="text-right bg-white px-3 py-1.5 rounded-xl border border-gray-200">
+                        <span className="text-[10px] text-emerald-800 font-bold block">{t('Est. Net Realization', 'शुद्ध प्राप्ति')}</span>
+                        <span className="font-heading font-extrabold text-sm text-[#14532D]">
+                          ₹{m.estimatedNetRealization.toLocaleString('en-IN')}
                         </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {m.distanceKm} km away • Transport Cost: ₹{m.transportCost} • Demand: {m.demandLevel}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center space-x-4 self-end sm:self-auto">
-                    <div className="text-right">
-                      <span className="text-xs text-gray-500 block">{t('Mandi Price', 'मंडी भाव')}</span>
-                      <span className="font-extrabold text-gray-900">₹{m.pricePerQuintal}/q</span>
-                    </div>
-
-                    <div className="text-right bg-white px-3 py-1.5 rounded-xl border border-gray-200">
-                      <span className="text-[10px] text-emerald-800 font-bold block">{t('Est. Net Realization', 'शुद्ध प्राप्ति')}</span>
-                      <span className="font-heading font-extrabold text-sm text-[#14532D]">
-                        ₹{m.estimatedNetRealization.toLocaleString('en-IN')}
-                      </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            <p className="text-[11px] text-gray-500 mt-2">
+              👆 {t('Tap a mandi above to select it — your choice carries forward to the next step.', 'ऊपर किसी मंडी पर टैप करके चुनें — आपकी पसंद अगले चरण में भी लागू रहेगी।')}
+            </p>
           </div>
 
           {/* Navigation */}
@@ -681,45 +716,72 @@ export const SellWizard: React.FC = () => {
       )}
 
       {/* STEP 5: REGIONAL PREDICTIONS & SELL NOW VS STORE */}
-      {sellWizard.step === 5 && (
+      {sellWizard.step === 5 && (() => {
+        const chosenMandi = mandis.find((m) => m.id === sellWizard.selectedMandiId) || mandis[0];
+        const quintals = sellWizard.quantityKg / 100;
+        const chosenStorage = storageFacilities.find((s) => s.id === sellWizard.selectedStorageId) || storageFacilities[0];
+
+        // Sell Now (Option A) — driven by the mandi the farmer picked in Step 4
+        const sellNowGross = Math.round(chosenMandi.pricePerQuintal * quintals);
+        const sellNowTransport = chosenMandi.transportCost;
+        const sellNowNet = sellNowGross - sellNowTransport;
+
+        // Store & Sell Later (Option B) — projected +3.5% price after 30 days,
+        // minus double transport (to warehouse + to mandi later) and 30 days
+        // of real storage cost from the selected storage facility.
+        const projectedFuturePrice = Math.round(chosenMandi.pricePerQuintal * 1.035);
+        const storeGross = Math.round(projectedFuturePrice * quintals);
+        const storeTransport = Math.round(chosenMandi.transportCost * 1.7);
+        const storeStorageCost = Math.round(chosenStorage.ratePerDay * 30 * quintals);
+        const storeNet = storeGross - storeTransport - storeStorageCost;
+
+        const sellNowIsBetter = sellNowNet >= storeNet;
+        const diff = Math.abs(sellNowNet - storeNet);
+
+        return (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div>
               <div className="inline-flex items-center space-x-1.5 bg-amber-100 text-amber-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full mb-1">
                 <Zap className="w-3.5 h-3.5 text-amber-700" />
-                <span>AI Predictive Decision Engine</span>
+                <span>{t('AI Predictive Decision Engine', 'एआई पूर्वानुमान निर्णय इंजन')}</span>
               </div>
               <h2 className="font-heading text-xl font-extrabold text-gray-900">
                 {t('Sell Now vs Store & Sell Later Comparison', 'अभी बेचें बनाम भंडारण करके बाद में बेचें')}
               </h2>
+              <p className="text-[11px] text-gray-500 mt-1">
+                {t('Based on your selected mandi', 'आपकी चुनी गई मंडी के आधार पर')}: <strong>{chosenMandi.name}</strong>
+              </p>
             </div>
             <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">
-              Confidence: 78%
+              {t('Confidence', 'विश्वास')}: 78%
             </span>
           </div>
 
           {/* Side by Side Comparison Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 1. SELL NOW OPTION */}
-            <div className="p-5 rounded-3xl border-2 border-emerald-500 bg-emerald-50/50 flex flex-col justify-between">
+            <div className={`p-5 rounded-3xl border-2 flex flex-col justify-between ${sellNowIsBetter ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-200 bg-gray-50'}`}>
               <div>
                 <div className="flex items-center justify-between">
                   <span className="font-heading font-extrabold text-base text-gray-900">
                     🟢 {t('Option A: Sell Within 3 Days', 'विकल्प A: 3 दिन में बेचें')}
                   </span>
-                  <span className="bg-[#EAB308] text-[#14532D] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                    {t('RECOMMENDED', 'अनुशंसित')}
-                  </span>
+                  {sellNowIsBetter && (
+                    <span className="bg-[#EAB308] text-[#14532D] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                      {t('RECOMMENDED', 'अनुशंसित')}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2 mt-4 text-xs">
                   <div className="flex justify-between text-gray-600">
-                    <span>{t('Gross Produce Value (500 KG @ ₹2,420/q)', 'सकल मूल्य')}</span>
-                    <span className="font-bold text-gray-900">₹12,100</span>
+                    <span>{t(`Gross Produce Value (${sellWizard.quantityKg} KG @ ₹${chosenMandi.pricePerQuintal}/q)`, 'सकल मूल्य')}</span>
+                    <span className="font-bold text-gray-900">₹{sellNowGross.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-rose-600">
                     <span>{t('Transport Overhead', 'वाहन भाड़ा')}</span>
-                    <span>− ₹350</span>
+                    <span>− ₹{sellNowTransport}</span>
                   </div>
                   <div className="flex justify-between text-gray-500">
                     <span>{t('Storage Cost', 'वेयरहाउस किराया')}</span>
@@ -727,64 +789,68 @@ export const SellWizard: React.FC = () => {
                   </div>
                   <div className="pt-2 border-t border-emerald-200 flex justify-between text-sm font-extrabold text-[#14532D]">
                     <span>{t('Estimated Net Realization:', 'शुद्ध प्राप्त मूल्य:')}</span>
-                    <span>₹11,750</span>
+                    <span>₹{sellNowNet.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-emerald-800 mt-3 bg-white p-2.5 rounded-xl border border-emerald-200">
-                  ✓ High active mill demand<br />
-                  ✓ Zero rain quality depreciation<br />
-                  ✓ Instant 2-day escrow settlement
+                  ✓ {t('High active mill demand', 'उच्च खरीदार मांग')}<br />
+                  ✓ {t('Zero rain quality depreciation', 'बारिश से कोई गुणवत्ता हानि नहीं')}<br />
+                  ✓ {t('Instant 2-day escrow settlement', 'तुरंत 2-दिन एस्क्रो भुगतान')}
                 </p>
               </div>
 
               <div className="mt-4 pt-3 border-t border-emerald-200">
                 <span className="text-[11px] font-bold text-[#14532D] block">
-                  {t('AI Recommendation: SELL WITHIN 3 DAYS', 'एआई सलाह: 3 दिन के भीतर बेचें')}
+                  {sellNowIsBetter
+                    ? t('AI Recommendation: SELL WITHIN 3 DAYS', 'एआई सलाह: 3 दिन के भीतर बेचें')
+                    : t(`Net outcome is ~₹${diff.toLocaleString('en-IN')} lower than storing.`, `भंडारण से लगभग ₹${diff.toLocaleString('en-IN')} कम प्राप्त होगा।`)}
                 </span>
               </div>
             </div>
 
             {/* 2. STORE AND SELL LATER */}
-            <div className="p-5 rounded-3xl border border-gray-200 bg-gray-50 flex flex-col justify-between">
+            <div className={`p-5 rounded-3xl border flex flex-col justify-between ${!sellNowIsBetter ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-200 bg-gray-50'}`}>
               <div>
                 <div className="flex items-center justify-between">
                   <span className="font-heading font-extrabold text-base text-gray-900">
                     📦 {t('Option B: Store in Silo (30 Days)', 'विकल्प B: 30 दिन गोदाम में रखें')}
                   </span>
-                  <span className="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    Alternative
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${!sellNowIsBetter ? 'bg-[#EAB308] text-[#14532D] font-extrabold' : 'bg-gray-200 text-gray-700'}`}>
+                    {!sellNowIsBetter ? t('RECOMMENDED', 'अनुशंसित') : t('Alternative', 'विकल्प')}
                   </span>
                 </div>
 
                 <div className="space-y-2 mt-4 text-xs">
                   <div className="flex justify-between text-gray-600">
-                    <span>{t('Projected Price (₹2,500/q)', 'अनुमानित भाव')}</span>
-                    <span className="font-bold text-gray-900">₹12,500</span>
+                    <span>{t(`Projected Price (₹${projectedFuturePrice}/q)`, 'अनुमानित भाव')}</span>
+                    <span className="font-bold text-gray-900">₹{storeGross.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-rose-600">
                     <span>{t('Transport to Warehouse + Mandi', 'दोगुना परिवहन')}</span>
-                    <span>− ₹600</span>
+                    <span>− ₹{storeTransport}</span>
                   </div>
                   <div className="flex justify-between text-rose-600">
-                    <span>{t('Storage Rent (30d @ ₹250/mth)', 'गोदाम किराया')}</span>
-                    <span>− ₹250</span>
+                    <span>{t(`Storage Rent (30d @ ₹${chosenStorage.ratePerDay}/day)`, 'गोदाम किराया')}</span>
+                    <span>− ₹{storeStorageCost}</span>
                   </div>
                   <div className="pt-2 border-t border-gray-200 flex justify-between text-sm font-extrabold text-gray-900">
                     <span>{t('Estimated Net Realization:', 'शुद्ध प्राप्त मूल्य:')}</span>
-                    <span>₹11,650</span>
+                    <span>₹{storeNet.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-gray-600 mt-3 bg-white p-2.5 rounded-xl border border-gray-200">
-                  ⚠ Storage rent and double handling offset higher future rate.<br />
-                  ⚠ Rainfall moisture transit risk.
+                  ⚠ {t('Storage rent and double handling offset higher future rate.', 'गोदाम किराया व दोहरी ढुलाई भविष्य के बेहतर भाव को कम कर सकते हैं।')}<br />
+                  ⚠ {t('Rainfall moisture transit risk.', 'परिवहन के दौरान नमी का जोखिम।')}
                 </p>
               </div>
 
               <div className="mt-4 pt-3 border-t border-gray-200">
                 <span className="text-[11px] font-medium text-gray-500 block">
-                  Net outcome is ~₹100 lower after storage fees.
+                  {!sellNowIsBetter
+                    ? t(`Net outcome is ~₹${diff.toLocaleString('en-IN')} higher than selling now.`, `अभी बेचने से लगभग ₹${diff.toLocaleString('en-IN')} अधिक प्राप्त होगा।`)
+                    : t(`Net outcome is ~₹${diff.toLocaleString('en-IN')} lower after storage fees.`, `भंडारण शुल्क के बाद लगभग ₹${diff.toLocaleString('en-IN')} कम प्राप्त होगा।`)}
                 </span>
               </div>
             </div>
@@ -801,14 +867,15 @@ export const SellWizard: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setSellWizard((prev) => ({ ...prev, step: 6 }))}
+              onClick={() => setSellWizard((prev) => ({ ...prev, step: 6, expectedPrice: chosenMandi.pricePerQuintal }))}
               className="px-6 py-3 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] rounded-xl font-extrabold text-xs shadow-md transition-all flex items-center space-x-2"
             >
               <span>{t('Set Expected Price & Discover →', 'अपेक्षित मूल्य निर्धारित करें →')}</span>
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* STEP 6: FARMER PRICE DISCOVERY & EXPECTATION */}
       {sellWizard.step === 6 && (

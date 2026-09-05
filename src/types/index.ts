@@ -1,5 +1,9 @@
 export type Role = 'landing' | 'farmer' | 'buyer' | 'admin';
 
+export interface StateDistrictMap {
+  [state: string]: string[];
+}
+
 export type Language = 'en' | 'hi';
 
 export type CropCategory = 'fruits' | 'vegetables' | 'crops';
@@ -73,6 +77,8 @@ export interface MandiComparison {
   id: string;
   name: string;
   location: string;
+  state: string;
+  district: string;
   distanceKm: number;
   pricePerQuintal: number;
   transportCost: number;
@@ -103,6 +109,8 @@ export interface TransportOption {
   perKmCost: number;
   rating: number;
   eta: string;
+  driverName: string;
+  driverPhone: string;
 }
 
 export interface Listing {
@@ -127,6 +135,7 @@ export interface Listing {
   createdAt: string;
   harvestDate: string;
   matchedBuyersCount: number;
+  farmerRating: number;
 }
 
 export interface MatchedBuyer {
@@ -232,7 +241,9 @@ export interface NotificationItem {
   id: string;
   type: 'offer' | 'market' | 'weather' | 'counter' | 'logistics' | 'payment';
   title: string;
+  titleHi: string;
   message: string;
+  messageHi: string;
   timestamp: string;
   read: boolean;
   actionTab?: string;
