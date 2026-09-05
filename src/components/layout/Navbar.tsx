@@ -116,9 +116,8 @@ export const Navbar: React.FC = () => {
                           setLanguage(l.code);
                           setIsLangOpen(false);
                         }}
-                        className={`w-full text-left px-3.5 py-2 text-sm flex items-center justify-between hover:bg-emerald-50 transition-colors ${
-                          language === l.code ? 'text-emerald-800 font-bold bg-emerald-50/60' : 'text-gray-700'
-                        }`}
+                        className={`w-full text-left px-3.5 py-2 text-sm flex items-center justify-between hover:bg-emerald-50 transition-colors ${language === l.code ? 'text-emerald-800 font-bold bg-emerald-50/60' : 'text-gray-700'
+                          }`}
                       >
                         <span>{l.nativeLabel}</span>
                         <span className="text-[10px] text-gray-400">{l.label}</span>
