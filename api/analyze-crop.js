@@ -149,41 +149,37 @@ export default async function handler(req, res) {
   const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
-    let response;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      response = await fetch(`${BASE_URL}/models/${DEFAULT_MODEL}:generateContent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
+    const response = await fetch(`${BASE_URL}/models/${DEFAULT_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }]
         },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: SYSTEM_PROMPT }]
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { inlineData: { mimeType: parsedImage.mimeType, data: parsedImage.data } },
-                {
-                  text: cropHint
-                    ? `The farmer says this is: ${cropHint}. Inspect the photo and return the JSON assessment.`
-                    : 'Inspect the photo and return the JSON assessment.'
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json'
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { mimeType: parsedImage.mimeType, data: parsedImage.data } },
+              {
+                text: cropHint
+                  ? `The farmer says this is: ${cropHint}. Inspect the photo and return the JSON assessment.`
+                  : 'Inspect the photo and return the JSON assessment.'
+              }
+            ]
           }
-        }),
-        signal: controller.signal
-      });
-      if (response.status !== 503) break;
-      await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); // brief backoff before retrying
-    }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      }),
+      signal: controller.signal
+    });
+
     clearTimeout(timeout);
 
     if (!response.ok) {

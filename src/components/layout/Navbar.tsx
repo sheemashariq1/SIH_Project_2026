@@ -12,13 +12,14 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { SUPPORTED_LANGUAGES } from '../../i18n/translations';
 
 export const Navbar: React.FC = () => {
   const {
     role,
     setRole,
     language,
-    toggleLanguage,
+    setLanguage,
     t,
     currentUser,
     notifications,
@@ -34,6 +35,7 @@ export const Navbar: React.FC = () => {
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
 
   // The Back button is only meaningful once inside a role (not on landing),
   // and we hide it if the farmer is already sitting at their home tab with
@@ -91,14 +93,40 @@ export const Navbar: React.FC = () => {
           {/* Right Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Language Switcher */}
-            <button
-              onClick={toggleLanguage}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1E6B3C]/70 hover:bg-[#1E6B3C] border border-emerald-400/30 text-xs font-semibold text-white transition-all shadow-sm"
-              title="Toggle Language / भाषा बदलें"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#FACC15]" />
-              <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsLangOpen((prev) => !prev)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1E6B3C]/70 hover:bg-[#1E6B3C] border border-emerald-400/30 text-xs font-semibold text-white transition-all shadow-sm"
+                title="Change Language / भाषा बदलें"
+              >
+                <Globe className="w-3.5 h-3.5 text-[#FACC15]" />
+                <span>{SUPPORTED_LANGUAGES.find((l) => l.code === language)?.nativeLabel || 'English'}</span>
+                <ChevronDown className="w-3 h-3 opacity-70" />
+              </button>
+
+              {isLangOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50">
+                    {SUPPORTED_LANGUAGES.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => {
+                          setLanguage(l.code);
+                          setIsLangOpen(false);
+                        }}
+                        className={`w-full text-left px-3.5 py-2 text-sm flex items-center justify-between hover:bg-emerald-50 transition-colors ${
+                          language === l.code ? 'text-emerald-800 font-bold bg-emerald-50/60' : 'text-gray-700'
+                        }`}
+                      >
+                        <span>{l.nativeLabel}</span>
+                        <span className="text-[10px] text-gray-400">{l.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Role Switcher Pills */}
             <div className="hidden lg:flex items-center bg-[#0F3E22] p-1 rounded-lg border border-emerald-600/30 text-xs">
@@ -207,9 +235,13 @@ export const Navbar: React.FC = () => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 pl-2 pr-2.5 py-1 rounded-lg bg-[#1E6B3C]/80 hover:bg-[#1E6B3C] border border-emerald-400/30 text-white transition-all text-xs font-semibold"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#EAB308] text-[#14532D] font-bold flex items-center justify-center text-xs">
-                    {currentUser.name.charAt(0)}
-                  </div>
+                  {currentUser.photoUrl ? (
+                    <img src={currentUser.photoUrl} alt={currentUser.name} className="w-6 h-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-[#EAB308] text-[#14532D] font-bold flex items-center justify-center text-xs">
+                      {currentUser.name.charAt(0)}
+                    </div>
+                  )}
                   <span className="hidden sm:inline font-medium text-emerald-100 max-w-[100px] truncate">
                     {currentUser.name}
                   </span>
@@ -219,14 +251,18 @@ export const Navbar: React.FC = () => {
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 text-gray-800 p-3 z-50 animate-in fade-in duration-150">
                     <div className="flex items-center space-x-3 p-2 bg-emerald-50/70 rounded-xl mb-2">
-                      <div className="w-10 h-10 rounded-full bg-[#14532D] text-[#FACC15] font-bold flex items-center justify-center text-sm shadow">
-                        {currentUser.name.charAt(0)}
-                      </div>
+                      {currentUser.photoUrl ? (
+                        <img src={currentUser.photoUrl} alt={currentUser.name} className="w-10 h-10 rounded-full object-cover shadow" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#14532D] text-[#FACC15] font-bold flex items-center justify-center text-sm shadow">
+                          {currentUser.name.charAt(0)}
+                        </div>
+                      )}
                       <div className="overflow-hidden">
                         <h4 className="text-xs font-bold text-gray-900 truncate">{currentUser.name}</h4>
                         <p className="text-[11px] text-emerald-700 font-medium flex items-center space-x-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{t('AI & Aadhaar Verified', 'सत्यापित किसान')}</span>
+                          <span>{currentUser.signedInWithGoogle ? t('Signed in with Google', 'Google से लॉग इन') : t('AI & Aadhaar Verified', 'सत्यापित किसान')}</span>
                         </p>
                       </div>
                     </div>

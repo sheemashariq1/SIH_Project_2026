@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { analyzeCropImage } from '../lib/analyzeCrop';
+import { lookupTranslation } from '../i18n/translations';
 import {
   Role,
   Language,
@@ -163,8 +164,11 @@ interface AppContextType {
     location: string;
     verified: boolean;
     fpoName?: string;
+    photoUrl?: string;
+    signedInWithGoogle?: boolean;
   };
   loginAs: (role: 'farmer' | 'buyer' | 'admin') => void;
+  loginWithGoogle: (profile: { name: string; email: string; photoUrl?: string }, role: 'farmer' | 'buyer' | 'admin') => void;
 
   // Global "Back" navigation helper (used by Navbar back button)
   homeSignal: number;
@@ -228,13 +232,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<'farmer' | 'buyer' | 'admin'>('farmer');
   const [homeSignal, setHomeSignal] = useState(0);
-  const [currentUser] = useState({
+  const [currentUser, setCurrentUser] = useState({
     name: 'Rameshwar Singh',
     phone: '+91 98123 45678',
     email: 'rameshwar.karnal@agrimail.in',
     location: 'Village Taraori, Karnal, Haryana (132001)',
     verified: true,
-    fpoName: 'Karnal Progressive Farmer Producer Company'
+    fpoName: 'Karnal Progressive Farmer Producer Company',
+    photoUrl: undefined as string | undefined,
+    signedInWithGoogle: false
   });
 
   const toggleLanguage = () => {
@@ -242,7 +248,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const t = (en: string, hi: string) => {
-    return language === 'hi' ? hi : en;
+    if (language === 'hi') return hi;
+    if (language === 'en') return en;
+    // For languages beyond English/Hindi, look up the exact English string
+    // in the extensible dictionary; anything not yet translated there
+    // falls back to English rather than showing nothing.
+    return lookupTranslation(language, en);
   };
 
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
@@ -702,6 +713,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (roleToSet === 'admin') setAdminTab('overview');
   };
 
+  // Merges the real name/email/photo returned by Google Sign-In into the
+  // demo profile (phone, village, FPO name stay as illustrative demo data
+  // since this prototype has no real backend to store those for a fresh
+  // Google account), then logs the person in as usual.
+  const loginWithGoogle = (
+    profile: { name: string; email: string; photoUrl?: string },
+    role: 'farmer' | 'buyer' | 'admin'
+  ) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: profile.name || prev.name,
+      email: profile.email || prev.email,
+      photoUrl: profile.photoUrl,
+      signedInWithGoogle: true
+    }));
+    loginAs(role);
+  };
+
   // Global "Back" button logic used by the Navbar. For the farmer role we can
   // step back through the Sell Wizard or return to the farmer home tab. For
   // buyer/admin (whose sub-tabs are managed locally inside those dashboards)
@@ -775,6 +804,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuthRole,
         currentUser,
         loginAs,
+        loginWithGoogle,
         homeSignal,
         goToRoleHome
       }}

@@ -4,7 +4,7 @@ export interface StateDistrictMap {
   [state: string]: string[];
 }
 
-export type Language = 'en' | 'hi';
+export type Language = 'en' | 'hi' | 'pa' | 'mr' | 'ta' | 'te' | 'bn' | 'gu';
 
 export type CropCategory = 'fruits' | 'vegetables' | 'crops';
 

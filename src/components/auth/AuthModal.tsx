@@ -9,7 +9,15 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 import { useApp } from '../../context/AppContext';
+
+interface GoogleJwtPayload {
+  name?: string;
+  email?: string;
+  picture?: string;
+}
 
 export const AuthModal: React.FC = () => {
   const {
@@ -18,8 +26,36 @@ export const AuthModal: React.FC = () => {
     authRole,
     setAuthRole,
     loginAs,
+    loginWithGoogle,
     t
   } = useApp();
+
+  // The Google Client ID is a public identifier, safe to read from the
+  // frontend build. If it hasn't been configured yet, we hide the Google
+  // button entirely instead of showing a broken/erroring one.
+  const isGoogleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    setGoogleError(null);
+    if (!credentialResponse.credential) {
+      setGoogleError('Google did not return a credential. Please try again.');
+      return;
+    }
+    try {
+      const decoded = jwtDecode<GoogleJwtPayload>(credentialResponse.credential);
+      loginWithGoogle(
+        {
+          name: decoded.name || 'Google User',
+          email: decoded.email || '',
+          photoUrl: decoded.picture
+        },
+        authRole
+      );
+    } catch {
+      setGoogleError('Could not read your Google profile. Please try again.');
+    }
+  };
 
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'otp'>('login');
   const [phoneOrEmail, setPhoneOrEmail] = useState('+91 98123 45678');
@@ -130,6 +166,31 @@ export const AuthModal: React.FC = () => {
               {t('Enter Demo →', 'प्रवेश करें →')}
             </button>
           </div>
+
+          {/* Google Sign-In (optional — only shown once VITE_GOOGLE_CLIENT_ID is configured) */}
+          {isGoogleConfigured && (
+            <div className="mb-5 space-y-2">
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setGoogleError('Google Sign-In failed. Please try again.')}
+                  text="signin_with"
+                  shape="pill"
+                  width="320"
+                />
+              </div>
+              {googleError && (
+                <p className="text-[11px] text-rose-600 text-center">{googleError}</p>
+              )}
+              <div className="flex items-center space-x-2 pt-1">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-[10px] text-gray-400 font-bold uppercase">
+                  {t('or use mobile/email', 'या मोबाइल/ईमेल इस्तेमाल करें')}
+                </span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+            </div>
+          )}
 
           {authMode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
