@@ -1,4 +1,5 @@
 import React from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { LandingPage } from './components/landing/LandingPage';
@@ -6,7 +7,10 @@ import { FarmerPortal } from './components/farmer/FarmerPortal';
 import { BuyerDashboard } from './components/buyer/BuyerDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AuthModal } from './components/auth/AuthModal';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
+
+const GOOGLE_CLIENT_ID =
+  (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
+  '526438262455-dg3oaojejk809ipbmul1lni4salh3398.apps.googleusercontent.com';
 
 const MainAppContent: React.FC = () => {
   const { role, isAuthOpen } = useApp();
@@ -16,17 +20,12 @@ const MainAppContent: React.FC = () => {
       {/* Top Universal Navbar */}
       <Navbar />
 
-      {/* Dynamic View Router based on user role.
-          Wrapped in an ErrorBoundary so an unexpected error on any one
-          screen can never leave the whole app as a blank page — the
-          farmer/buyer/admin always gets a way back to the home page. */}
+      {/* Dynamic View Router based on user role */}
       <div className="flex-1">
-        <ErrorBoundary key={role}>
-          {role === 'landing' && <LandingPage />}
-          {role === 'farmer' && <FarmerPortal />}
-          {role === 'buyer' && <BuyerDashboard />}
-          {role === 'admin' && <AdminDashboard />}
-        </ErrorBoundary>
+        {role === 'landing' && <LandingPage />}
+        {role === 'farmer' && <FarmerPortal />}
+        {role === 'buyer' && <BuyerDashboard />}
+        {role === 'admin' && <AdminDashboard />}
       </div>
 
       {/* Global Authentication / Sign In Modal */}
@@ -37,9 +36,12 @@ const MainAppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <MainAppContent />
-    </AppProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AppProvider>
+        <MainAppContent />
+      </AppProvider>
+    </GoogleOAuthProvider>
   );
 }
+
 

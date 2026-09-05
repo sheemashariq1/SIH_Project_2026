@@ -8,80 +8,54 @@ import {
   ChevronDown,
   LogOut,
   Sparkles,
-  MapPin,
-  ArrowLeft
+  MapPin
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { SUPPORTED_LANGUAGES } from '../../i18n/translations';
 
 export const Navbar: React.FC = () => {
   const {
     role,
     setRole,
     language,
-    setLanguage,
+    toggleLanguage,
     t,
     currentUser,
     notifications,
     unreadNotifsCount,
     markNotificationRead,
-    markAllNotificationsRead,
-    farmerTab,
     setFarmerTab,
-    sellWizard,
     setIsAuthOpen,
-    setAuthRole,
-    goToRoleHome
+    setAuthRole
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isLangOpen, setIsLangOpen] = useState(false);
-
-  // The Back button is only meaningful once inside a role (not on landing),
-  // and we hide it if the farmer is already sitting at their home tab with
-  // no wizard progress to unwind — nothing to go "back" to in that case.
-  const showBackButton =
-    role !== 'landing' &&
-    !(role === 'farmer' && farmerTab === 'home' && sellWizard.step <= 1);
 
   return (
     <header className="sticky top-0 z-40 bg-[#14532D] text-white shadow-md border-b border-[#1E6B3C]/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand / Logo + Back Button */}
-          <div className="flex items-center space-x-2">
-            {showBackButton && (
-              <button
-                onClick={goToRoleHome}
-                title={t('Back', 'पीछे')}
-                className="flex items-center space-x-1 bg-[#0F3E22] hover:bg-[#1E6B3C] text-emerald-100 text-xs font-bold px-2.5 py-2 rounded-xl border border-emerald-500/30 transition-colors mr-1"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('Back', 'पीछे')}</span>
-              </button>
-            )}
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole('landing')}>
-              <div className="w-10 h-10 rounded-xl bg-[#EAB308] text-[#14532D] flex items-center justify-center shadow-inner font-bold text-xl">
-                <Sprout className="w-6 h-6 text-[#14532D]" />
+          {/* Brand / Logo */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole('landing')}>
+            <div className="w-10 h-10 rounded-xl bg-[#EAB308] text-[#14532D] flex items-center justify-center shadow-inner font-bold text-xl">
+              <Sprout className="w-6 h-6 text-[#14532D]" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="font-heading font-extrabold text-xl tracking-tight text-white">
+                  Kisan<span className="text-[#FACC15]">Connect</span>
+                </span>
+                <span className="bg-[#1E6B3C] text-emerald-100 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  SIH Pro
+                </span>
               </div>
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="font-heading font-extrabold text-xl tracking-tight text-white">
-                    Kisan<span className="text-[#FACC15]">Connect</span>
-                  </span>
-                  <span className="bg-[#1E6B3C] text-emerald-100 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border border-emerald-400/30">
-                    SIH Pro
-                  </span>
-                </div>
-                <p className="text-[11px] text-emerald-200/80 font-medium hidden sm:block">
-                  {t('Your Crop. Your Market. Your Choice.', 'आपकी फसल. आपका बाज़ार. आपका फैसला.')}
-                </p>
-              </div>
+              <p className="text-[11px] text-emerald-200/80 font-medium hidden sm:block">
+                {t('Your Crop. Your Market. Your Choice.', 'आपकी फसल. आपका बाज़ार. आपका फैसला.')}
+              </p>
             </div>
           </div>
 
-          {/* Center Location & Mode Tag */}
+          {/* Center Location & Mode Tag (Visible when not in landing) */}
           {role !== 'landing' && (
             <div className="hidden md:flex items-center space-x-2 bg-[#0F3E22]/60 px-3.5 py-1.5 rounded-full border border-emerald-500/20 text-xs text-emerald-100">
               <MapPin className="w-3.5 h-3.5 text-[#FACC15]" />
@@ -94,41 +68,16 @@ export const Navbar: React.FC = () => {
           {/* Right Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Language Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setIsLangOpen((prev) => !prev)}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1E6B3C]/70 hover:bg-[#1E6B3C] border border-emerald-400/30 text-xs font-semibold text-white transition-all shadow-sm"
-                title="Change Language / भाषा बदलें"
-              >
-                <Globe className="w-3.5 h-3.5 text-[#FACC15]" />
-                <span>{SUPPORTED_LANGUAGES.find((l) => l.code === language)?.nativeLabel || 'English'}</span>
-                <ChevronDown className="w-3 h-3 opacity-70" />
-              </button>
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1E6B3C]/70 hover:bg-[#1E6B3C] border border-emerald-400/30 text-xs font-semibold text-white transition-all shadow-sm"
+              title="Toggle Language / भाषा बदलें"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#FACC15]" />
+              <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
+            </button>
 
-              {isLangOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50">
-                    {SUPPORTED_LANGUAGES.map((l) => (
-                      <button
-                        key={l.code}
-                        onClick={() => {
-                          setLanguage(l.code);
-                          setIsLangOpen(false);
-                        }}
-                        className={`w-full text-left px-3.5 py-2 text-sm flex items-center justify-between hover:bg-emerald-50 transition-colors ${language === l.code ? 'text-emerald-800 font-bold bg-emerald-50/60' : 'text-gray-700'
-                          }`}
-                      >
-                        <span>{l.nativeLabel}</span>
-                        <span className="text-[10px] text-gray-400">{l.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Role Switcher Pills */}
+            {/* Role Switcher Pills (Header quick toggle for easy SIH evaluator testing) */}
             <div className="hidden lg:flex items-center bg-[#0F3E22] p-1 rounded-lg border border-emerald-600/30 text-xs">
               <button
                 onClick={() => {
@@ -181,18 +130,9 @@ export const Navbar: React.FC = () => {
                         {t('Live Activity & Alerts', 'लाइव सूचनाएं व अलर्ट')}
                       </h4>
                     </div>
-                    {unreadNotifsCount > 0 ? (
-                      <button
-                        onClick={() => markAllNotificationsRead()}
-                        className="text-[11px] text-emerald-700 font-bold hover:underline"
-                      >
-                        {t('Mark all read', 'सभी पढ़ा हुआ चिह्नित करें')}
-                      </button>
-                    ) : (
-                      <span className="text-[11px] text-gray-400 font-medium">
-                        {t('All caught up', 'सब पढ़ लिया गया')}
-                      </span>
-                    )}
+                    <span className="text-[11px] text-gray-500 font-medium">
+                      {unreadNotifsCount} {t('new', 'नए')}
+                    </span>
                   </div>
 
                   <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 px-2 py-1">
@@ -212,13 +152,13 @@ export const Navbar: React.FC = () => {
                       >
                         <div className="flex items-start justify-between">
                           <p className="text-xs font-bold text-[#14532D] flex items-center space-x-1">
-                            <span>{t(n.title, n.titleHi)}</span>
+                            <span>{n.title}</span>
                           </p>
                           <span className="text-[10px] text-gray-400 font-mono ml-2 whitespace-nowrap">
                             {n.timestamp}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t(n.message, n.messageHi)}</p>
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">{n.message}</p>
                       </div>
                     ))}
                   </div>
@@ -244,8 +184,12 @@ export const Navbar: React.FC = () => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 pl-2 pr-2.5 py-1 rounded-lg bg-[#1E6B3C]/80 hover:bg-[#1E6B3C] border border-emerald-400/30 text-white transition-all text-xs font-semibold"
                 >
-                  {currentUser.photoUrl ? (
-                    <img src={currentUser.photoUrl} alt={currentUser.name} className="w-6 h-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  {currentUser.avatar ? (
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-6 h-6 rounded-full object-cover border border-white/40"
+                    />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-[#EAB308] text-[#14532D] font-bold flex items-center justify-center text-xs">
                       {currentUser.name.charAt(0)}
@@ -260,8 +204,12 @@ export const Navbar: React.FC = () => {
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 text-gray-800 p-3 z-50 animate-in fade-in duration-150">
                     <div className="flex items-center space-x-3 p-2 bg-emerald-50/70 rounded-xl mb-2">
-                      {currentUser.photoUrl ? (
-                        <img src={currentUser.photoUrl} alt={currentUser.name} className="w-10 h-10 rounded-full object-cover shadow" referrerPolicy="no-referrer" />
+                      {currentUser.avatar ? (
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name}
+                          className="w-10 h-10 rounded-full object-cover border border-emerald-600/30 shadow"
+                        />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-[#14532D] text-[#FACC15] font-bold flex items-center justify-center text-sm shadow">
                           {currentUser.name.charAt(0)}
@@ -271,7 +219,11 @@ export const Navbar: React.FC = () => {
                         <h4 className="text-xs font-bold text-gray-900 truncate">{currentUser.name}</h4>
                         <p className="text-[11px] text-emerald-700 font-medium flex items-center space-x-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{currentUser.signedInWithGoogle ? t('Signed in with Google', 'Google से लॉग इन') : t('AI & Aadhaar Verified', 'सत्यापित किसान')}</span>
+                          <span>
+                            {currentUser.provider === 'google'
+                              ? t('Google Verified', 'गूगल सत्यापित')
+                              : t('AI & Aadhaar Verified', 'सत्यापित किसान')}
+                          </span>
                         </p>
                       </div>
                     </div>

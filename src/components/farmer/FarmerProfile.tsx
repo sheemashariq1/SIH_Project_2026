@@ -45,9 +45,17 @@ export const FarmerProfile: React.FC = () => {
       <div className="bg-gradient-to-r from-[#14532D] to-[#1E6B3C] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#EAB308] text-[#14532D] font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/40">
-              🌾
-            </div>
+            {currentUser.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt={name}
+                className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/40"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-[#EAB308] text-[#14532D] font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/40">
+                🌾
+              </div>
+            )}
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="font-heading text-2xl font-black text-white">{name}</h1>

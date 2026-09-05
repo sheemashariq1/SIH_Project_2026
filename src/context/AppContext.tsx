@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { analyzeCropImage } from '../lib/analyzeCrop';
-import { lookupTranslation } from '../i18n/translations';
 import {
   Role,
   Language,
@@ -80,16 +78,12 @@ export interface SellWizardState {
   hasStorage: boolean;
   hasTransport: boolean;
   imagePreview: string | null;
-  /** The real uploaded File (if the farmer picked one), used for live AI vision analysis. */
-  imageFile: File | null;
   aiAssessment: AIQualityAssessment | null;
-  aiError: string | null;
   isScanning: boolean;
   scanStepIndex: number;
   expectedPrice: number;
   selectedTransportId: string;
   selectedStorageId: string;
-  selectedMandiId: string;
 }
 
 interface AppContextType {
@@ -131,7 +125,6 @@ interface AppContextType {
   notifications: NotificationItem[];
   unreadNotifsCount: number;
   markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
   addNotification: (notif: Omit<NotificationItem, 'id' | 'timestamp' | 'read'>) => void;
 
   // Wizard state
@@ -140,7 +133,6 @@ interface AppContextType {
   resetSellWizard: () => void;
   startSellWithCrop: (cropId: string) => void;
   runAIScanForWizard: (sampleCropId?: string) => Promise<void>;
-  setWizardImage: (file: File) => void;
   publishCurrentWizardListing: () => void;
 
   // Actions
@@ -165,15 +157,11 @@ interface AppContextType {
     location: string;
     verified: boolean;
     fpoName?: string;
-    photoUrl?: string;
-    signedInWithGoogle?: boolean;
+    avatar?: string;
+    provider?: 'google' | 'phone' | 'demo';
   };
   loginAs: (role: 'farmer' | 'buyer' | 'admin') => void;
-  loginWithGoogle: (profile: { name: string; email: string; photoUrl?: string }, role: 'farmer' | 'buyer' | 'admin') => void;
-
-  // Global "Back" navigation helper (used by Navbar back button)
-  homeSignal: number;
-  goToRoleHome: () => void;
+  loginWithGoogle: (userInfo: { name: string; email: string; avatar?: string; role?: 'farmer' | 'buyer' | 'admin' }) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -190,15 +178,12 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
   hasStorage: false,
   hasTransport: false,
   imagePreview: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
-  imageFile: null,
   aiAssessment: null,
-  aiError: null,
   isScanning: false,
   scanStepIndex: 0,
   expectedPrice: 2450,
   selectedTransportId: 'trans-mini',
-  selectedStorageId: 'store-greenstore',
-  selectedMandiId: 'mandi-karnal'
+  selectedStorageId: 'store-greenstore'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -232,7 +217,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auth
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<'farmer' | 'buyer' | 'admin'>('farmer');
-  const [homeSignal, setHomeSignal] = useState(0);
   const [currentUser, setCurrentUser] = useState({
     name: 'Rameshwar Singh',
     phone: '+91 98123 45678',
@@ -240,8 +224,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     location: 'Village Taraori, Karnal, Haryana (132001)',
     verified: true,
     fpoName: 'Karnal Progressive Farmer Producer Company',
-    photoUrl: undefined as string | undefined,
-    signedInWithGoogle: false
+    avatar: '',
+    provider: 'demo' as 'google' | 'phone' | 'demo'
   });
 
   const toggleLanguage = () => {
@@ -249,12 +233,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const t = (en: string, hi: string) => {
-    if (language === 'hi') return hi;
-    if (language === 'en') return en;
-    // For languages beyond English/Hindi, look up the exact English string
-    // in the extensible dictionary; anything not yet translated there
-    // falls back to English rather than showing nothing.
-    return lookupTranslation(language, en);
+    return language === 'hi' ? hi : en;
   };
 
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
@@ -263,10 +242,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-  };
-
-  const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'timestamp' | 'read'>) => {
@@ -295,17 +270,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFarmerTab('sell');
   };
 
-  const setWizardImage = (file: File) => {
-    const previewUrl = URL.createObjectURL(file);
-    setSellWizard((prev) => ({
-      ...prev,
-      imageFile: file,
-      imagePreview: previewUrl,
-      aiAssessment: null,
-      aiError: null
-    }));
-  };
-
   const runAIScanForWizard = async (sampleCropId?: string) => {
     const targetCrop = sampleCropId
       ? CROPS_DATA.find((c) => c.id === sampleCropId) || sellWizard.crop
@@ -314,33 +278,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSellWizard((prev) => ({
       ...prev,
       isScanning: true,
-      scanStepIndex: 0,
-      aiError: null
+      scanStepIndex: 0
     }));
 
-    // Drive the scan-stage animation while the real (or fallback) analysis runs in parallel.
-    const animationSteps = (async () => {
-      for (let i = 1; i <= 6; i++) {
-        await new Promise((res) => setTimeout(res, 450));
-        setSellWizard((prev) => ({ ...prev, scanStepIndex: i }));
-      }
-    })();
+    // Simulated multi-stage scan delays
+    for (let i = 1; i <= 6; i++) {
+      await new Promise((res) => setTimeout(res, 450));
+      setSellWizard((prev) => ({
+        ...prev,
+        scanStepIndex: i
+      }));
+    }
 
-    // Prefer the farmer's real uploaded photo; fall back to the existing preview
-    // (e.g. the default sample image) so the flow always produces a result.
-    const imageSource: File | string | null = sellWizard.imageFile || sellWizard.imagePreview;
-
-    const analysisPromise = imageSource
-      ? analyzeCropImage(imageSource, targetCrop?.id || 'wheat', targetCrop?.name || 'Wheat')
-      : Promise.resolve(null);
-
-    const [, result] = await Promise.all([animationSteps, analysisPromise]);
+    // High quality assessment synthesis
+    const mockAssessment: AIQualityAssessment = {
+      cropId: targetCrop?.id || 'wheat',
+      cropName: targetCrop?.name || 'Wheat',
+      qualityScore: 87,
+      recommendedGrade: 'Grade A',
+      confidence: 91,
+      visibleDamagePercent: 8,
+      spoilageIndicator: 'Low',
+      moistureContent: '11.4%',
+      lusterScore: 'High / Golden Sheen',
+      indicators: {
+        positive: [
+          'Uniform grain size, weight and natural golden luster',
+          'Moisture level strictly under optimal 12% storage threshold',
+          'Negligible foreign matter / chaff (< 1.1%)'
+        ],
+        warnings: [
+          'Minor 8% surface abrasion during mechanical threshing'
+        ]
+      },
+      recommendationText: 'Suitable for premium commercial procurement with maximum price realization and zero mandi broker cut.',
+      analyzedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
 
     setSellWizard((prev) => ({
       ...prev,
       isScanning: false,
-      aiAssessment: result?.assessment ?? null,
-      aiError: result?.source === 'demo' ? result.error || 'Live AI grading unavailable — showing demo estimate.' : null
+      aiAssessment: mockAssessment
     }));
   };
 
@@ -381,8 +359,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'active',
       createdAt: 'Just now',
       harvestDate: sellWizard.harvestDate,
-      matchedBuyersCount: 4,
-      farmerRating: 4.7
+      matchedBuyersCount: 4
     };
 
     setListings((prev) => [newListing, ...prev]);
@@ -421,9 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '🎉 Listing Published Live!',
-      titleHi: '🎉 लिस्टिंग प्रकाशित हुई!',
       message: `${newListing.cropName} is now visible. ABC Foods immediately sent an offer of ₹${sellWizard.expectedPrice - 20}/q.`,
-      messageHi: `${newListing.cropName} अब सभी खरीदारों को दिख रहा है। ABC Foods ने तुरंत ₹${sellWizard.expectedPrice - 20}/क्विंटल का ऑफर भेजा।`,
       actionTab: 'offers'
     });
 
@@ -476,9 +451,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             addNotification({
               type: 'counter',
               title: '💬 Buyer Counter Offer',
-              titleHi: '💬 खरीदार का काउंटर ऑफर',
               message: `${off.buyerName} replied with ₹${buyerCounterPrice}/q. Tap to review and confirm deal.`,
-              messageHi: `${off.buyerName} ने ₹${buyerCounterPrice}/क्विंटल के साथ जवाब दिया। सौदा देखने व पक्का करने के लिए टैप करें।`,
               actionTab: 'offers'
             });
           }, 1500);
@@ -564,9 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'payment',
       title: '✅ Deal Confirmed!',
-      titleHi: '✅ सौदा पक्का हुआ!',
       message: `Deal locked with ${targetOffer.buyerName} at ₹${targetOffer.currentOfferPrice}/q. Escrow initialized.`,
-      messageHi: `${targetOffer.buyerName} के साथ ₹${targetOffer.currentOfferPrice}/क्विंटल पर सौदा पक्का हुआ। एस्क्रो शुरू किया गया।`,
       actionTab: 'txn'
     });
 
@@ -631,9 +602,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: '📋 Requirement Published',
-      titleHi: '📋 आवश्यकता प्रकाशित हुई',
       message: `Requirement for ${req.quantityKg} KG ${req.cropName} is active and matching with farmers.`,
-      messageHi: `${req.quantityKg} किलो ${req.cropName} की आवश्यकता सक्रिय है और किसानों से मिलान हो रहा है।`,
       actionTab: 'find'
     });
   };
@@ -678,9 +647,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '📤 Offer Submitted to Farmer',
-      titleHi: '📤 किसान को ऑफर भेजा गया',
       message: `Your offer of ₹${pricePerQuintal}/q was sent to ${targetListing.farmerName}.`,
-      messageHi: `आपका ₹${pricePerQuintal}/क्विंटल का ऑफर ${targetListing.farmerName} को भेजा गया।`,
       actionTab: 'offers'
     });
   };
@@ -689,9 +656,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: approved ? '✅ Verification Approved' : '❌ Verification Rejected',
-      titleHi: approved ? '✅ सत्यापन स्वीकृत' : '❌ सत्यापन अस्वीकृत',
       message: `${userRole === 'farmer' ? 'Farmer' : 'Buyer'} ID ${userId} status updated by Admin.`,
-      messageHi: `${userRole === 'farmer' ? 'किसान' : 'खरीदार'} ID ${userId} की स्थिति एडमिन द्वारा अपडेट की गई।`,
       actionTab: 'overview'
     });
   };
@@ -718,39 +683,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (roleToSet === 'admin') setAdminTab('overview');
   };
 
-  // Merges the real name/email/photo returned by Google Sign-In into the
-  // demo profile (phone, village, FPO name stay as illustrative demo data
-  // since this prototype has no real backend to store those for a fresh
-  // Google account), then logs the person in as usual.
-  const loginWithGoogle = (
-    profile: { name: string; email: string; photoUrl?: string },
-    role: 'farmer' | 'buyer' | 'admin'
-  ) => {
+  const loginWithGoogle = (userInfo: {
+    name: string;
+    email: string;
+    avatar?: string;
+    role?: 'farmer' | 'buyer' | 'admin';
+  }) => {
+    const roleToSet = userInfo.role || authRole;
     setCurrentUser((prev) => ({
       ...prev,
-      name: profile.name || prev.name,
-      email: profile.email || prev.email,
-      photoUrl: profile.photoUrl,
-      signedInWithGoogle: true
+      name: userInfo.name || prev.name,
+      email: userInfo.email || prev.email,
+      avatar: userInfo.avatar || '',
+      verified: true,
+      provider: 'google'
     }));
-    loginAs(role);
-  };
+    setRole(roleToSet);
+    setIsAuthOpen(false);
+    if (roleToSet === 'farmer') setFarmerTab('home');
+    if (roleToSet === 'buyer') setBuyerTab('dashboard');
+    if (roleToSet === 'admin') setAdminTab('overview');
 
-  // Global "Back" button logic used by the Navbar. For the farmer role we can
-  // step back through the Sell Wizard or return to the farmer home tab. For
-  // buyer/admin (whose sub-tabs are managed locally inside those dashboards)
-  // we bump a signal that those components listen for to reset to their
-  // default view — this guarantees there is always a way back without a
-  // full page reload.
-  const goToRoleHome = () => {
-    if (role === 'farmer') {
-      if (farmerTab === 'sell' && sellWizard.step > 1) {
-        setSellWizard((prev) => ({ ...prev, step: prev.step - 1 }));
-      } else if (farmerTab !== 'home') {
-        setFarmerTab('home');
-      }
-    } else if (role === 'buyer' || role === 'admin') {
-      setHomeSignal((prev) => prev + 1);
+    addNotification({
+      type: 'market',
+      title: '🟢 Google Login Verified',
+      message: `Signed in as ${userInfo.name} (${userInfo.email || roleToSet}).`,
+      actionTab: roleToSet === 'farmer' ? 'profile' : 'dashboard'
+    });
+
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.5 },
+        colors: ['#4285F4', '#34A853', '#FBBC05', '#EA4335']
+      });
+    } catch {
+      // Ignore if confetti is disabled
     }
   };
 
@@ -787,14 +756,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         unreadNotifsCount,
         markNotificationRead,
-        markAllNotificationsRead,
         addNotification,
         sellWizard,
         setSellWizard,
         resetSellWizard,
         startSellWithCrop,
         runAIScanForWizard,
-        setWizardImage,
         publishCurrentWizardListing,
         sendCounterOffer,
         acceptOffer,
@@ -810,9 +777,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuthRole,
         currentUser,
         loginAs,
-        loginWithGoogle,
-        homeSignal,
-        goToRoleHome
+        loginWithGoogle
       }}
     >
       {children}
