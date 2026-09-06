@@ -46,7 +46,7 @@ export const PredictionsPage: React.FC = () => {
               {t('AI Regional Price & Demand Predictions', 'एआई क्षेत्रीय मूल्य व मांग पूर्वानुमान')}
             </h1>
             <span className="bg-amber-100 text-amber-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-amber-300">
-              Model Simulation
+                {t('Model Simulation', 'मॉडल सिमुलेशन')}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
@@ -117,7 +117,7 @@ export const PredictionsPage: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
           <span className="text-gray-500 text-xs font-bold">{t('DEMAND OUTLOOK', 'मांग दृष्टिकोण')}</span>
           <div className="mt-2 font-heading text-2xl font-extrabold text-amber-700">
-            HIGH ↑
+            {t('HIGH ↑', 'उच्च ↑')}↑
           </div>
           <p className="text-xs font-bold text-amber-800 mt-1">+14% expected processing demand</p>
         </div>
@@ -125,7 +125,7 @@ export const PredictionsPage: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
           <span className="text-gray-500 text-xs font-bold">{t('SUPPLY & ARRIVALS', 'आवक व आपूर्ति')}</span>
           <div className="mt-2 font-heading text-2xl font-extrabold text-gray-900">
-            MODERATE
+            {t('MODERATE', 'मध्यम')}
           </div>
           <p className="text-xs text-gray-500 mt-1">+8% arrival momentum</p>
         </div>
@@ -133,7 +133,7 @@ export const PredictionsPage: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
           <span className="text-gray-500 text-xs font-bold">{t('WEATHER RISK FACTOR', 'मौसम जोखिम')}</span>
           <div className="mt-2 font-heading text-2xl font-extrabold text-rose-700">
-            MEDIUM 🌧
+            {t('MEDIUM', 'मध्यम')} 🌧
           </div>
           <p className="text-xs text-rose-600 font-bold mt-1">72% precipitation probability</p>
         </div>
