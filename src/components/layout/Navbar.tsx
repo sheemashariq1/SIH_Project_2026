@@ -25,7 +25,8 @@ export const Navbar: React.FC = () => {
     markNotificationRead,
     setFarmerTab,
     setIsAuthOpen,
-    setAuthRole
+    setAuthRole,
+    logout
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -78,32 +79,36 @@ export const Navbar: React.FC = () => {
             </button>
 
             {/* Role Switcher Pills (Header quick toggle for easy SIH evaluator testing) */}
-            <div className="hidden lg:flex items-center bg-[#0F3E22] p-1 rounded-lg border border-emerald-600/30 text-xs">
-              <button
-                onClick={() => {
-                  setRole('farmer');
-                  setFarmerTab('home');
-                }}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'farmer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                  }`}
-              >
-                👨‍🌾 {t('Farmer', 'किसान')}
-              </button>
-              <button
-                onClick={() => setRole('buyer')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'buyer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                  }`}
-              >
-                🏢 {t('Buyer', 'खरीदार')}
-              </button>
-              <button
-                onClick={() => setRole('admin')}
-                className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'admin' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
-                  }`}
-              >
-                ⚡ {t('Admin', 'व्यवस्थापक')}
-              </button>
-            </div>
+            {/* Only shown once the person is already logged in, so this can't be used
+                to bypass the login modal from the landing page. */}
+            {role !== 'landing' && (
+              <div className="hidden lg:flex items-center bg-[#0F3E22] p-1 rounded-lg border border-emerald-600/30 text-xs">
+                <button
+                  onClick={() => {
+                    setRole('farmer');
+                    setFarmerTab('home');
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'farmer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                    }`}
+                >
+                  👨‍🌾 {t('Farmer', 'किसान')}
+                </button>
+                <button
+                  onClick={() => setRole('buyer')}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'buyer' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                    }`}
+                >
+                  🏢 {t('Buyer', 'खरीदार')}
+                </button>
+                <button
+                  onClick={() => setRole('admin')}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-all ${role === 'admin' ? 'bg-[#EAB308] text-[#14532D] font-bold shadow-sm' : 'text-emerald-200 hover:text-white'
+                    }`}
+                >
+                  ⚡ {t('Admin', 'व्यवस्थापक')}
+                </button>
+              </div>
+            )}
 
             {/* Notification Bell */}
             <div className="relative">
@@ -237,7 +242,7 @@ export const Navbar: React.FC = () => {
                     <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
                       <button
                         onClick={() => {
-                          setRole('landing');
+                          logout();
                           setIsProfileOpen(false);
                         }}
                         className="w-full flex items-center space-x-2 px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 rounded-lg font-medium transition-colors"
