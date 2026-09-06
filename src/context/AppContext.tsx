@@ -79,6 +79,7 @@ export interface SellWizardState {
   hasStorage: boolean;
   hasTransport: boolean;
   imagePreview: string | null;
+  imageFile: File | null;
   aiAssessment: AIQualityAssessment | null;
   isScanning: boolean;
   scanStepIndex: number;
@@ -130,12 +131,14 @@ interface AppContextType {
   notifications: NotificationItem[];
   unreadNotifsCount: number;
   markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   addNotification: (notif: Omit<NotificationItem, 'id' | 'timestamp' | 'read'>) => void;
 
   // Wizard state
   sellWizard: SellWizardState;
   setSellWizard: React.Dispatch<React.SetStateAction<SellWizardState>>;
   resetSellWizard: () => void;
+  setWizardImage: (file: File) => void;
   startSellWithCrop: (cropId: string) => void;
   runAIScanForWizard: (sampleCropId?: string) => Promise<void>;
   publishCurrentWizardListing: () => void;
@@ -184,6 +187,7 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
   hasStorage: false,
   hasTransport: false,
   imagePreview: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
+  imageFile: null,
   aiAssessment: null,
   isScanning: false,
   scanStepIndex: 0,
@@ -291,6 +295,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Marks every notification as read in one go — used by the Notifications
+  // page, which treats simply opening the page as having "seen" everything
+  // in the list, the same way most notification centers behave.
+  const markAllNotificationsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
   const addNotification = (notif: Omit<NotificationItem, 'id' | 'timestamp' | 'read'>) => {
     const newNotif: NotificationItem = {
       ...notif,
@@ -303,6 +314,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetSellWizard = () => {
     setSellWizard(INITIAL_WIZARD_STATE);
+  };
+
+  // Called when the farmer uploads or drags in a real crop photo during the
+  // Sell Wizard (Step 2). Builds a local preview URL for the image so it can
+  // be shown immediately, and keeps the original File object around too.
+  const setWizardImage = (file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    setSellWizard((prev) => ({
+      ...prev,
+      imagePreview: objectUrl,
+      imageFile: file
+    }));
   };
 
   const startSellWithCrop = (cropId: string) => {
@@ -821,10 +844,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         unreadNotifsCount,
         markNotificationRead,
+        markAllNotificationsRead,
         addNotification,
         sellWizard,
         setSellWizard,
         resetSellWizard,
+        setWizardImage,
         startSellWithCrop,
         runAIScanForWizard,
         publishCurrentWizardListing,
