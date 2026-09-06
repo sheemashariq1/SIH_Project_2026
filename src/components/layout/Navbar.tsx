@@ -16,6 +16,7 @@ export const Navbar: React.FC = () => {
   const {
     role,
     setRole,
+    goHome,
     language,
     toggleLanguage,
     t,
@@ -37,7 +38,17 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand / Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole('landing')}>
+          {/* On the landing page this has nothing to reset. Once logged in,
+              clicking the logo should act as a lightweight "Back to Home"
+              for whichever dashboard is open (via goHome/homeSignal), not
+              force a full logout back to the landing page. */}
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() => {
+              if (role === 'landing') return;
+              goHome();
+            }}
+          >
             <div className="w-10 h-10 rounded-xl bg-[#EAB308] text-[#14532D] flex items-center justify-center shadow-inner font-bold text-xl">
               <Sprout className="w-6 h-6 text-[#14532D]" />
             </div>
