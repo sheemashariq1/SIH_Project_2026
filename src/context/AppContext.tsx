@@ -165,7 +165,7 @@ interface AppContextType {
     avatar?: string;
     provider?: 'google' | 'phone' | 'demo';
   };
-  loginAs: (role: 'farmer' | 'buyer' | 'admin') => void;
+  loginAs: (role: 'farmer' | 'buyer' | 'admin', userDetails?: { name?: string; phone?: string }) => void;
   loginWithGoogle: (userInfo: { name: string; email: string; avatar?: string; role?: 'farmer' | 'buyer' | 'admin' }) => void;
   logout: () => void;
 }
@@ -722,7 +722,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const loginAs = (roleToSet: 'farmer' | 'buyer' | 'admin') => {
+  // Called when someone logs in via the phone/password, OTP, signup form, or
+  // the "Enter Demo" quick-access button. `userDetails` carries whatever the
+  // person actually typed in (their name / phone) so currentUser reflects
+  // the real logged-in person instead of always staying on the hardcoded
+  // demo profile.
+  const loginAs = (
+    roleToSet: 'farmer' | 'buyer' | 'admin',
+    userDetails?: { name?: string; phone?: string }
+  ) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: userDetails?.name || prev.name,
+      phone: userDetails?.phone || prev.phone,
+      provider: 'demo'
+    }));
     setRole(roleToSet);
     setIsAuthOpen(false);
     if (roleToSet === 'farmer') setFarmerTab('home');
