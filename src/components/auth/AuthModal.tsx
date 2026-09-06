@@ -44,14 +44,30 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthOpen) return null;
 
+  // Login form (phone/password): pass whatever the person actually typed
+  // into the "Mobile Number or Email" field through as their name/phone so
+  // currentUser reflects the real logged-in person instead of staying on
+  // the hardcoded demo profile.
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginAs(authRole);
+    loginAs(authRole, { phone: phoneOrEmail });
+  };
+
+  // Signup form: use the name they actually entered.
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginAs(authRole, { name: fullName, phone: phoneOrEmail });
   };
 
   const handleSendOtp = () => {
     setIsOtpSent(true);
     setAuthMode('otp');
+  };
+
+  // OTP verify: still tied to whatever phone/email they entered on the
+  // previous screen.
+  const handleVerifyOtp = () => {
+    loginAs(authRole, { phone: phoneOrEmail });
   };
 
   const handleGoogleSuccess = (credentialResponse: any) => {
@@ -341,7 +357,7 @@ export const AuthModal: React.FC = () => {
               </div>
 
               <button
-                onClick={() => loginAs(authRole)}
+                onClick={handleVerifyOtp}
                 className="w-full py-3 bg-[#14532D] hover:bg-[#1E6B3C] text-white rounded-xl font-bold text-sm shadow-md transition-all"
               >
                 {t('Verify OTP & Enter', 'ओटीपी सत्यापित करें और प्रवेश करें')}
@@ -357,7 +373,7 @@ export const AuthModal: React.FC = () => {
           )}
 
           {authMode === 'signup' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-3">
+            <form onSubmit={handleSignupSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">
