@@ -112,7 +112,7 @@ export const AICropScanPage: React.FC = () => {
               {t('AI Crop Quality Assessment', 'एआई फसल गुणवत्ता जांच')}
             </h1>
             <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
-              AI-Assisted
+              {t('AI-Assisted', 'एआई-सहायित')}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">
@@ -192,7 +192,7 @@ export const AICropScanPage: React.FC = () => {
           <h3 className="font-heading font-extrabold text-base text-gray-900 flex items-center justify-between">
             <span>{t('Crop Image Analyzer', 'फसल इमेज स्कैनर')}</span>
             <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-              HD Resolution
+              {t('HD Resolution', 'एचडी रिज़ॉल्यूशन')}
             </span>
           </h3>
 
@@ -279,7 +279,7 @@ export const AICropScanPage: React.FC = () => {
                     {t('AI QUALITY REPORT', 'एआई गुणवत्ता प्रमाण-पत्र')}
                   </span>
                   <h3 className="font-heading text-xl font-extrabold text-gray-900">
-                    {report?.cropName || (isScanning ? '…' : 'Wheat')}
+                    {report?.cropName || (isScanning ? '…' : t('Wheat', 'गेहूं'))}
                   </h3>
                 </div>
                 <span className="bg-emerald-100 text-emerald-900 text-xs font-extrabold px-3 py-1 rounded-full">
@@ -296,33 +296,33 @@ export const AICropScanPage: React.FC = () => {
 
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="p-4 bg-gradient-to-br from-[#14532D] to-[#1E6B3C] text-white rounded-2xl">
-                  <span className="text-[10px] text-emerald-300 font-bold block">QUALITY SCORE</span>
+                  <span className="text-[10px] text-emerald-300 font-bold block">{t('QUALITY SCORE', 'गुणवत्ता स्कोर')}</span>
                   <span className="font-heading text-3xl font-extrabold text-[#FACC15]">
                     {report?.qualityScore ?? '—'}
                   </span>
-                  <span className="text-[10px] text-emerald-200 block mt-0.5">/ 100 Points</span>
+                  <span className="text-[10px] text-emerald-200 block mt-0.5">{t('/ 100 Points', '/ 100 अंक')}</span>
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                  <span className="text-[10px] text-gray-500 font-bold block">CONFIDENCE</span>
+                  <span className="text-[10px] text-gray-500 font-bold block">{t('CONFIDENCE', 'विश्वसनीयता')}</span>
                   <span className="font-heading text-2xl font-bold text-gray-900">{report?.confidence ?? '—'}%</span>
                   <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
-                    {report?.aiSource === 'live' ? 'Gemini Vision' : 'Demo Estimate'}
+                    {report?.aiSource === 'live' ? t('Gemini Vision', 'जेमिनी विज़न') : t('Demo Estimate', 'डेमो अनुमान')}
                   </span>
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                  <span className="text-[10px] text-gray-500 font-bold block">DAMAGE PERCENT</span>
+                  <span className="text-[10px] text-gray-500 font-bold block">{t('DAMAGE PERCENT', 'नुकसान प्रतिशत')}</span>
                   <span className="font-heading text-2xl font-bold text-gray-900">
                     {report?.visibleDamagePercent ?? '—'}%
                   </span>
-                  <span className="text-[10px] text-gray-500 block mt-0.5">Visible Damage</span>
+                  <span className="text-[10px] text-gray-500 block mt-0.5">{t('Visible Damage', 'दिखाई देने वाला नुकसान')}</span>
                 </div>
               </div>
 
               <div className="mt-4 space-y-2 p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs">
                 <span className="font-bold text-emerald-950 block">
-                  {report?.aiSource === 'live' ? 'AI-Verified Indicators:' : 'Demo Indicators:'}
+                  {report?.aiSource === 'live' ? t('AI-Verified Indicators:', 'एआई-सत्यापित संकेत:') : t('Demo Indicators:', 'डेमो संकेत:')}
                 </span>
                 <ul className="space-y-1 text-emerald-900">
                   {report?.indicators.positive.map((ind, i) => (
