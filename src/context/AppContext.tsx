@@ -29,6 +29,7 @@ import {
   INITIAL_DISPUTES,
   INITIAL_NOTIFICATIONS
 } from '../data/mockData';
+import { TRANSLATIONS, SUPPORTED_LANGUAGES } from '../i18n/translations';
 
 export type FarmerTab =
   | 'home'
@@ -89,9 +90,13 @@ export interface SellWizardState {
 interface AppContextType {
   role: Role;
   setRole: (role: Role) => void;
+  homeSignal: number;
+  goHome: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
+  supportedLanguages: typeof SUPPORTED_LANGUAGES;
+  voiceLang: string;
   t: (en: string, hi: string) => string;
 
   // Farmer state
@@ -162,6 +167,7 @@ interface AppContextType {
   };
   loginAs: (role: 'farmer' | 'buyer' | 'admin') => void;
   loginWithGoogle: (userInfo: { name: string; email: string; avatar?: string; role?: 'farmer' | 'buyer' | 'admin' }) => void;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -188,6 +194,15 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRole] = useState<Role>('landing');
+
+  // Incremented every time the user goes back to their dashboard's home/overview
+  // (e.g. via the Navbar's Back/Logo button). Dashboards listen to this via
+  // useEffect to reset their internal tab state back to the default view.
+  const [homeSignal, setHomeSignal] = useState(0);
+  const goHome = () => {
+    setHomeSignal((prev) => prev + 1);
+  };
+
   const [language, setLanguage] = useState<Language>('en');
 
   // Navigation tabs
@@ -217,7 +232,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auth
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<'farmer' | 'buyer' | 'admin'>('farmer');
-  const [currentUser, setCurrentUser] = useState({
+  const DEFAULT_USER = {
     name: 'Rameshwar Singh',
     phone: '+91 98123 45678',
     email: 'rameshwar.karnal@agrimail.in',
@@ -226,14 +241,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fpoName: 'Karnal Progressive Farmer Producer Company',
     avatar: '',
     provider: 'demo' as 'google' | 'phone' | 'demo'
-  });
+  };
+  const [currentUser, setCurrentUser] = useState(DEFAULT_USER);
+
+  // Fully logs the user out: clears any session-specific account info (e.g. a
+  // Google-linked name/photo) and sends them to the landing page, where the
+  // login modal is required again to re-enter any portal.
+  const logout = () => {
+    setCurrentUser(DEFAULT_USER);
+    setRole('landing');
+    setIsAuthOpen(false);
+  };
+
+  // BCP-47 locale codes for the voice input (speech recognition) feature.
+  const VOICE_LOCALE_MAP: Record<Language, string> = {
+    en: 'en-IN',
+    hi: 'hi-IN',
+    pa: 'pa-IN',
+    mr: 'mr-IN',
+    ta: 'ta-IN',
+    te: 'te-IN',
+    bn: 'bn-IN',
+    gu: 'gu-IN'
+  };
+  const voiceLang = VOICE_LOCALE_MAP[language] || 'en-IN';
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === 'en' ? 'hi' : 'en'));
   };
 
+  // Translates a hardcoded (English, Hindi) pair based on the active language.
+  // For languages beyond English/Hindi (Punjabi, Marathi, Tamil, Telugu,
+  // Bengali, Gujarati), we look up the exact English string in the
+  // agriculture-specific TRANSLATIONS dictionary. If that string hasn't been
+  // translated yet for the active language, we fall back to English rather
+  // than showing a blank or broken label.
   const t = (en: string, hi: string) => {
-    return language === 'hi' ? hi : en;
+    if (language === 'hi') return hi;
+    if (language === 'en') return en;
+    const dict = TRANSLATIONS[language];
+    return dict?.[en] ?? en;
   };
 
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
@@ -728,9 +775,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         role,
         setRole,
+        homeSignal,
+        goHome,
         language,
         setLanguage,
         toggleLanguage,
+        supportedLanguages: SUPPORTED_LANGUAGES,
+        voiceLang,
         t,
         farmerTab,
         setFarmerTab,
@@ -777,7 +828,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuthRole,
         currentUser,
         loginAs,
-        loginWithGoogle
+        loginWithGoogle,
+        logout
       }}
     >
       {children}
