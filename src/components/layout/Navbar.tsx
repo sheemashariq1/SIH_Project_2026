@@ -163,7 +163,11 @@ export const Navbar: React.FC = () => {
             {/* Notification Bell */}
             <div className="relative">
               <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                onClick={() => {
+                  const opening = !isNotifOpen;
+                  setIsNotifOpen(opening);
+                  if (opening) markAllNotificationsRead();
+                }}
                 className="relative p-2 rounded-lg bg-[#1E6B3C]/70 hover:bg-[#1E6B3C] border border-emerald-400/30 text-white transition-all"
                 title="Notifications"
               >
