@@ -156,7 +156,7 @@ export const LandingPage: React.FC = () => {
           <div
             onClick={() => {
               setRole('buyer');
-              setBuyerTab('dashboard');
+              setBuyerTab('browse');
             }}
             className="group relative bg-white p-8 rounded-3xl text-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-gray-200/80 flex flex-col justify-between overflow-hidden"
           >
@@ -314,7 +314,7 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => {
                 setRole('buyer');
-                setBuyerTab('dashboard');
+                setBuyerTab('browse');
               }}
               className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl font-extrabold text-sm shadow transition-colors"
             >

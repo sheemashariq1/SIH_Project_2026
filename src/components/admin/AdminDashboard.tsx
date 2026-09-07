@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ShieldAlert,
   Users,
@@ -19,14 +19,8 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const AdminDashboard: React.FC = () => {
-  const { listings, transactions, homeSignal, t } = useApp();
+  const { listings, transactions, adminTab, setAdminTab, t } = useApp();
 
-  const [adminTab, setAdminTab] = useState<'overview' | 'kyc' | 'ai-health' | 'escrow-bank' | 'disputes'>('overview');
-
-  // Reset to the default tab whenever the Navbar's "Back" button is pressed.
-  useEffect(() => {
-    setAdminTab('overview');
-  }, [homeSignal]);
   const [kycApprovals, setKycApprovals] = useState([
     { id: 'KYC-881', name: 'Sukhwinder Singh', role: 'Farmer', location: 'Ambala, HR', doc: 'Aadhaar + Land Patta', status: 'Pending' },
     { id: 'KYC-882', name: 'Kisan Agro Processors', role: 'Corporate Buyer', location: 'Panipat, HR', doc: 'GST + FSSAI License', status: 'Pending' },
@@ -138,10 +132,10 @@ export const AdminDashboard: React.FC = () => {
             <div className="lg:col-span-2 bg-gray-900 p-6 rounded-3xl border border-gray-800 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-800">
                 <h3 className="font-heading font-extrabold text-base text-white">
-                  Live Market Transactions (Escrow Stream)
+                  {t('Live Market Transactions (Escrow Stream)', 'लाइव बाज़ार लेनदेन (एस्क्रो स्ट्रीम)')}
                 </h3>
                 <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded">
-                  Live Sync
+                  {t('Live Sync', 'लाइव सिंक')}
                 </span>
               </div>
 
@@ -175,7 +169,7 @@ export const AdminDashboard: React.FC = () => {
             {/* Ingestion & Telemetry Feeds */}
             <div className="bg-gray-900 p-6 rounded-3xl border border-gray-800 space-y-4">
               <h3 className="font-heading font-extrabold text-base text-white">
-                Data Pipeline Health
+                {t('Data Pipeline Health', 'डेटा पाइपलाइन स्थिति')}
               </h3>
 
               <div className="space-y-3 text-xs">
@@ -211,7 +205,7 @@ export const AdminDashboard: React.FC = () => {
         {adminTab === 'kyc' && (
           <div className="bg-gray-900 p-6 rounded-3xl border border-gray-800 space-y-4">
             <h3 className="font-heading font-extrabold text-lg text-white">
-              Farmer & Mill Buyer Verification Queue
+              {t('Farmer & Mill Buyer Verification Queue', 'किसान व मिल खरीदार सत्यापन कतार')}
             </h3>
 
             <div className="space-y-3">
@@ -239,7 +233,7 @@ export const AdminDashboard: React.FC = () => {
                         onClick={() => handleApproveKyc(item.id)}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-xs"
                       >
-                        Approve & Verify KYC
+                        {t('Approve & Verify KYC', 'KYC स्वीकृत व सत्यापित करें')}
                       </button>
                     ) : (
                       <span className="text-emerald-400 font-bold bg-emerald-950 px-3 py-1 rounded-xl">
@@ -282,7 +276,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div>
                 <h3 className="font-heading font-extrabold text-base text-white">
-                  Tri-Party Escrow Bank Ledger
+                  {t('Tri-Party Escrow Bank Ledger', 'त्रिपक्षीय एस्क्रो बैंक खाता')}
                 </h3>
                 <p className="text-xs text-gray-400">Master escrow pooling account with automatic IMPS smart contracts</p>
               </div>
@@ -292,7 +286,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <p className="text-xs text-gray-400 leading-relaxed">
-              Every crop transaction automatically locks funds upon buyer deal acceptance. No farmer can suffer non-payment or delayed cheques after handing over their produce.
+              {t('Every crop transaction automatically locks funds upon buyer deal acceptance. No farmer can suffer non-payment or delayed cheques after handing over their produce.', 'खरीदार सौदा स्वीकार करते ही हर लेनदेन की राशि स्वतः सुरक्षित हो जाती है। उपज सौंपने के बाद किसान को भुगतान न मिलने या देरी का खतरा नहीं रहता।')}
             </p>
           </div>
         )}

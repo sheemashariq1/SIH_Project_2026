@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ShoppingBag,
   Search,
@@ -28,16 +28,10 @@ export const BuyerDashboard: React.FC = () => {
     createBuyerOffer,
     sendCounterOffer,
     advanceTransactionStage,
-    homeSignal,
+    buyerTab: activeTab,
+    setBuyerTab: setActiveTab,
     t
   } = useApp();
-
-  const [activeTab, setActiveTab] = useState<'browse' | 'bids' | 'deals' | 'escrow'>('browse');
-
-  // Reset to the default tab whenever the Navbar's "Back" button is pressed.
-  useEffect(() => {
-    setActiveTab('browse');
-  }, [homeSignal]);
 
   const [selectedCropFilter, setSelectedCropFilter] = useState('All');
   const [selectedGradeFilter, setSelectedGradeFilter] = useState('All');
@@ -131,25 +125,25 @@ export const BuyerDashboard: React.FC = () => {
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-xs">
             <span className="text-xs font-bold text-gray-500 block">{t('ACTIVE FARM LOTS', 'सक्रिय फसल लॉट')}</span>
             <div className="mt-2 font-heading text-3xl font-extrabold text-gray-900">{listings.length}</div>
-            <p className="text-[11px] text-emerald-700 font-bold mt-1">100% AI Quality Graded</p>
+            <p className="text-[11px] text-emerald-700 font-bold mt-1">{t('100% AI Quality Graded', '100% एआई गुणवत्ता जांचित')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-xs">
             <span className="text-xs font-bold text-gray-500 block">{t('ACTIVE NEGOTIATIONS', 'चल रही बोलियां')}</span>
             <div className="mt-2 font-heading text-3xl font-extrabold text-amber-700">{offers.length}</div>
-            <p className="text-[11px] text-gray-500 mt-1">Direct farmer channels</p>
+            <p className="text-[11px] text-gray-500 mt-1">{t('Direct farmer channels', 'सीधे किसान चैनल')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border-2 border-emerald-500/50 bg-emerald-50/20 shadow-xs">
             <span className="text-xs font-bold text-emerald-950 block">{t('ESCROW LOCKED FUNDS', 'एस्क्रो में जमा राशि')}</span>
             <div className="mt-2 font-heading text-3xl font-extrabold text-[#14532D]">₹12,150</div>
-            <p className="text-[11px] text-emerald-800 font-bold mt-1">Protected in HDFC Escrow</p>
+            <p className="text-[11px] text-emerald-800 font-bold mt-1">{t('Protected in HDFC Escrow', 'एचडीएफसी एस्क्रो में सुरक्षित')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-xs">
             <span className="text-xs font-bold text-gray-500 block">{t('COMPLETED PROCUREMENT', 'कुल खरीद')}</span>
             <div className="mt-2 font-heading text-3xl font-extrabold text-gray-900">42.5 <span className="text-xs text-gray-500 font-normal">T</span></div>
-            <p className="text-[11px] text-emerald-700 font-bold mt-1">Direct from 18 Farmers</p>
+            <p className="text-[11px] text-emerald-700 font-bold mt-1">{t('Direct from 18 Farmers', '18 किसानों से सीधे')}</p>
           </div>
         </div>
 
@@ -220,7 +214,7 @@ export const BuyerDashboard: React.FC = () => {
                     <div className="mt-3 p-3 bg-gray-50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
                         <span className="font-bold text-gray-900 block">{item.farmerName}</span>
-                        <span className="text-[10px] text-gray-500">Verified Seller (3+ Years)</span>
+                        <span className="text-[10px] text-gray-500">{t('Verified Seller (3+ Years)', 'सत्यापित विक्रेता (3+ वर्ष)')}</span>
                       </div>
                       <div className="flex items-center space-x-1 text-amber-500 font-bold">
                         <Star className="w-3.5 h-3.5 fill-amber-400" />
@@ -231,28 +225,28 @@ export const BuyerDashboard: React.FC = () => {
                     {/* AI Lab Breakdown */}
                     <div className="mt-3 p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-1">
                       <div className="flex justify-between text-emerald-950">
-                        <span>Grain Moisture:</span>
+                        <span>{t('Grain Moisture:', 'नमी:')}</span>
                         <span className="font-bold">{item.aiQuality.moistureContent}</span>
                       </div>
                       <div className="flex justify-between text-emerald-950">
-                        <span>Visible Damage:</span>
+                        <span>{t('Visible Damage:', 'दृश्य क्षति:')}</span>
                         <span className="font-bold">{item.aiQuality.visibleDamagePercent}%</span>
                       </div>
                       <div className="flex justify-between text-emerald-950">
-                        <span>AI Confidence:</span>
+                        <span>{t('AI Confidence:', 'एआई विश्वास स्तर:')}</span>
                         <span className="font-bold">{item.aiQuality.confidence}%</span>
                       </div>
                     </div>
 
                     <div className="mt-4 flex items-baseline justify-between">
                       <div>
-                        <span className="text-xs text-gray-500 block">Quantity</span>
+                        <span className="text-xs text-gray-500 block">{t('Quantity', 'मात्रा')}</span>
                         <span className="font-heading text-lg font-bold text-gray-900">
                           {item.quantityKg} KG
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-gray-500 block">Farmer Ask Price</span>
+                        <span className="text-xs text-gray-500 block">{t('Farmer Ask Price', 'किसान की मांग कीमत')}</span>
                         <span className="font-heading text-xl font-extrabold text-[#14532D]">
                           ₹{item.expectedPricePerQuintal}/q
                         </span>
@@ -361,7 +355,7 @@ export const BuyerDashboard: React.FC = () => {
                         >
                           <div className="flex items-baseline justify-between gap-4 border-b pb-1 border-white/20">
                             <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
-                              Proposed Price
+                              {t('Proposed Price', 'प्रस्तावित मूल्य')}
                             </span>
                             <span className="font-heading font-extrabold text-base text-[#FACC15]">
                               ₹{msg.pricePerQuintal}/q
@@ -377,7 +371,7 @@ export const BuyerDashboard: React.FC = () => {
                 {/* Buyer Message Input Bar */}
                 <div className="p-4 bg-white border-t border-gray-200 space-y-3">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-gray-700">Counter Price (₹/q):</span>
+                    <span className="text-xs font-bold text-gray-700">{t('Counter Price (₹/q):', 'काउंटर मूल्य (₹/क्विंटल):')}</span>
                     <input
                       type="number"
                       value={buyerCounterRate}
@@ -404,7 +398,7 @@ export const BuyerDashboard: React.FC = () => {
                       className="px-5 py-2.5 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow flex items-center space-x-1.5"
                     >
                       <Send className="w-4 h-4" />
-                      <span>Send</span>
+                      <span>{t('Send', 'भेजें')}</span>
                     </button>
                   </div>
                 </div>
@@ -423,11 +417,11 @@ export const BuyerDashboard: React.FC = () => {
                     {t('Corporate Buyer Escrow Control Center', 'खरीदार एस्क्रो नियंत्रण कक्ष')}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Deposit advance funds into tri-party bank escrow to lock premium farmer harvest lots.
+                    {t('Deposit advance funds into tri-party bank escrow to lock premium farmer harvest lots.', 'प्रीमियम किसान उपज लॉट सुरक्षित करने हेतु त्रिपक्षीय बैंक एस्क्रो में अग्रिम राशि जमा करें।')}
                   </p>
                 </div>
                 <span className="text-xs bg-emerald-100 text-emerald-900 font-extrabold px-3 py-1 rounded-full">
-                  HDFC Integrated Node
+                  {t('HDFC Integrated Node', 'HDFC एकीकृत नोड')}
                 </span>
               </div>
 
@@ -442,13 +436,13 @@ export const BuyerDashboard: React.FC = () => {
                         <span className="font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border">
                           {tr.id}
                         </span>
-                        <span className="text-xs text-gray-500 font-medium">Stage {tr.currentStage + 1} of {tr.stages.length}</span>
+                        <span className="text-xs text-gray-500 font-medium">{t('Stage', 'चरण')} {tr.currentStage + 1} {t('of', 'में से')} {tr.stages.length}</span>
                       </div>
                       <h4 className="font-heading font-bold text-base text-gray-900 mt-1">
-                        {tr.cropName} • {tr.quantityKg} KG (Farmer: {tr.farmerName})
+                        {tr.cropName} • {tr.quantityKg} KG ({t('Farmer:', 'किसान:')} {tr.farmerName})
                       </h4>
                       <p className="text-xs text-emerald-800 font-bold mt-0.5">
-                        Agreed Rate: ₹{tr.finalPricePerQuintal}/quintal • Escrow Balance: ₹{tr.grossValue.toLocaleString('en-IN')}
+                        {t('Agreed Rate:', 'सहमत मूल्य:')} ₹{tr.finalPricePerQuintal}/quintal • {t('Escrow Balance:', 'एस्क्रो शेष:')} ₹{tr.grossValue.toLocaleString('en-IN')}
                       </p>
                     </div>
 
@@ -458,11 +452,11 @@ export const BuyerDashboard: React.FC = () => {
                           onClick={() => advanceTransactionStage(tr.id)}
                           className="px-4 py-2 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow-xs"
                         >
-                          Approve Dock Weighment & Advance Stage →
+                          {t('Approve Dock Weighment & Advance Stage →', 'तौल स्वीकृत करें व अगला चरण →')}
                         </button>
                       ) : (
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-xl">
-                          ✓ Settled & Released to Farmer
+                          ✓ {t('Settled & Released to Farmer', 'निपटान व किसान को भेजा गया')}
                         </span>
                       )}
                     </div>
@@ -484,10 +478,10 @@ export const BuyerDashboard: React.FC = () => {
                   {selectedListingForBid.grade} • AI Quality {selectedListingForBid.aiQuality.qualityScore}/100
                 </span>
                 <h3 className="font-heading font-extrabold text-xl text-gray-900 mt-1">
-                  Place Bid on {selectedListingForBid.cropName}
+                  {t('Place Bid on', 'बोली लगाएं')} {selectedListingForBid.cropName}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Seller: {selectedListingForBid.farmerName} (📍 {selectedListingForBid.farmerLocation})
+                  {t('Seller:', 'विक्रेता:')} {selectedListingForBid.farmerName} (📍 {selectedListingForBid.farmerLocation})
                 </p>
               </div>
               <button
@@ -502,28 +496,28 @@ export const BuyerDashboard: React.FC = () => {
               <div className="p-6 bg-emerald-50 border border-emerald-300 rounded-2xl text-center space-y-2">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
                 <h4 className="font-heading font-extrabold text-base text-emerald-950">
-                  Bid Submitted to {selectedListingForBid.farmerName}!
+                  {t('Bid Submitted to', 'बोली भेजी गई')} {selectedListingForBid.farmerName}!
                 </h4>
                 <p className="text-xs text-emerald-800">
-                  Redirecting to live bargaining channel...
+                  {t('Redirecting to live bargaining channel...', 'लाइव बातचीत चैनल पर ले जाया जा रहा है...')}
                 </p>
               </div>
             ) : (
               <form onSubmit={handlePlaceBid} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50 p-3.5 rounded-2xl">
                   <div>
-                    <span className="text-gray-500 block">Lot Quantity:</span>
+                    <span className="text-gray-500 block">{t('Lot Quantity:', 'लॉट मात्रा:')}</span>
                     <span className="font-bold text-gray-900">{selectedListingForBid.quantityKg} KG ({(selectedListingForBid.quantityKg / 100).toFixed(1)} Qtl)</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Farmer Ask:</span>
+                    <span className="text-gray-500 block">{t('Farmer Ask:', 'किसान की मांग:')}</span>
                     <span className="font-bold text-[#14532D]">₹{selectedListingForBid.expectedPricePerQuintal}/quintal</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Your Bid Price (₹ per Quintal)
+                    {t('Your Bid Price (₹ per Quintal)', 'आपकी बोली मूल्य (₹ प्रति क्विंटल)')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-3 font-bold text-gray-500">₹</span>
@@ -539,7 +533,7 @@ export const BuyerDashboard: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Message / Logistics Terms to Farmer
+                    {t('Message / Logistics Terms to Farmer', 'किसान को संदेश / परिवहन शर्तें')}
                   </label>
                   <textarea
                     value={bidNote}
@@ -555,13 +549,13 @@ export const BuyerDashboard: React.FC = () => {
                     onClick={() => setSelectedListingForBid(null)}
                     className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl"
                   >
-                    Cancel
+                    {t('Cancel', 'रद्द करें')}
                   </button>
                   <button
                     type="submit"
                     className="flex-1 py-3 bg-[#14532D] hover:bg-[#1E6B3C] text-[#FACC15] font-extrabold text-xs rounded-xl shadow-lg"
                   >
-                    Submit Bid & Open Negotiation
+                    {t('Submit Bid & Open Negotiation', 'बोली सबमिट करें')}
                   </button>
                 </div>
               </form>

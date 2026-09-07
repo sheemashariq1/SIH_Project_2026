@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Role,
@@ -45,27 +45,9 @@ export type FarmerTab =
   | 'notifications'
   | 'profile';
 
-export type BuyerTab =
-  | 'dashboard'
-  | 'find'
-  | 'market'
-  | 'requirements'
-  | 'offers'
-  | 'purchases'
-  | 'logistics'
-  | 'payments'
-  | 'profile';
+export type BuyerTab = 'browse' | 'bids' | 'deals' | 'escrow';
 
-export type AdminTab =
-  | 'overview'
-  | 'farmers'
-  | 'buyers'
-  | 'listings'
-  | 'markets'
-  | 'ai'
-  | 'weather'
-  | 'transactions'
-  | 'disputes';
+export type AdminTab = 'overview' | 'kyc' | 'ai-health' | 'escrow-bank' | 'disputes';
 
 export interface SellWizardState {
   step: number; // 1: Crop, 2: Harvest Details, 3: AI Scan, 4: Weather & Market, 5: Predictions & Sell/Store, 6: Price Discovery, 7: Logistics, 8: Summary & Publish
@@ -86,13 +68,15 @@ export interface SellWizardState {
   expectedPrice: number;
   selectedTransportId: string;
   selectedStorageId: string;
+  selectedMandiId: string;
+  aiError: string | null;
 }
 
 interface AppContextType {
   role: Role;
   setRole: (role: Role) => void;
-  homeSignal: number;
-  goHome: () => void;
+  goBack: () => void;
+  showBackButton: boolean;
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
@@ -193,25 +177,19 @@ const INITIAL_WIZARD_STATE: SellWizardState = {
   scanStepIndex: 0,
   expectedPrice: 2450,
   selectedTransportId: 'trans-mini',
-  selectedStorageId: 'store-greenstore'
+  selectedStorageId: 'store-greenstore',
+  selectedMandiId: 'mandi-karnal',
+  aiError: null
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<Role>('landing');
-
-  // Incremented every time the user goes back to their dashboard's home/overview
-  // (e.g. via the Navbar's Back/Logo button). Dashboards listen to this via
-  // useEffect to reset their internal tab state back to the default view.
-  const [homeSignal, setHomeSignal] = useState(0);
-  const goHome = () => {
-    setHomeSignal((prev) => prev + 1);
-  };
+  const [role, setRoleState] = useState<Role>('landing');
 
   const [language, setLanguage] = useState<Language>('en');
 
   // Navigation tabs
   const [farmerTab, setFarmerTab] = useState<FarmerTab>('home');
-  const [buyerTab, setBuyerTab] = useState<BuyerTab>('dashboard');
+  const [buyerTab, setBuyerTab] = useState<BuyerTab>('browse');
   const [adminTab, setAdminTab] = useState<AdminTab>('overview');
 
   // Datasets in State
@@ -232,6 +210,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Wizard
   const [sellWizard, setSellWizard] = useState<SellWizardState>(INITIAL_WIZARD_STATE);
+
+  // ---------------------------------------------------------------------
+  // REAL "Back" navigation (history stack), not just "go to home tab".
+  //
+  // Every time role / farmerTab / buyerTab / adminTab / the Sell Wizard's
+  // step changes, we snapshot the PREVIOUS state onto a stack. Pressing the
+  // Navbar's "← Back" button pops the last snapshot and restores it — so
+  // Dashboard → My Crops → AI Scan, then Back, Back takes you My Crops then
+  // Dashboard, exactly like browser back — instead of always jumping
+  // straight to the home tab.
+  // ---------------------------------------------------------------------
+  interface NavSnapshot {
+    role: Role;
+    farmerTab: FarmerTab;
+    buyerTab: BuyerTab;
+    adminTab: AdminTab;
+    sellWizardStep: number;
+  }
+
+  const setRole = (newRole: Role) => setRoleState(newRole);
+
+  const historyStackRef = useRef<NavSnapshot[]>([]);
+  const prevSnapshotRef = useRef<NavSnapshot>({
+    role,
+    farmerTab,
+    buyerTab,
+    adminTab,
+    sellWizardStep: sellWizard.step
+  });
+  const isRestoringRef = useRef(false);
+
+  useEffect(() => {
+    const current: NavSnapshot = {
+      role,
+      farmerTab,
+      buyerTab,
+      adminTab,
+      sellWizardStep: sellWizard.step
+    };
+    const prev = prevSnapshotRef.current;
+
+    const changed =
+      current.role !== prev.role ||
+      current.farmerTab !== prev.farmerTab ||
+      current.buyerTab !== prev.buyerTab ||
+      current.adminTab !== prev.adminTab ||
+      current.sellWizardStep !== prev.sellWizardStep;
+
+    if (!changed) return;
+
+    if (isRestoringRef.current) {
+      // This change was caused by goBack() itself restoring a snapshot —
+      // just sync, don't record it as a new "forward" step.
+      isRestoringRef.current = false;
+      prevSnapshotRef.current = current;
+      return;
+    }
+
+    if (current.role !== prev.role) {
+      // Switching role entirely (fresh login / role switch) starts a clean
+      // back-history rather than mixing screens across roles.
+      historyStackRef.current = [];
+    } else {
+      historyStackRef.current.push(prev);
+      // Cap depth so a long demo session can't grow this unboundedly.
+      if (historyStackRef.current.length > 40) historyStackRef.current.shift();
+    }
+
+    prevSnapshotRef.current = current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, farmerTab, buyerTab, adminTab, sellWizard.step]);
+
+  const goBack = () => {
+    const stack = historyStackRef.current;
+
+    if (stack.length > 0) {
+      const target = stack.pop()!;
+      isRestoringRef.current = true;
+      if (target.role !== role) setRoleState(target.role);
+      setFarmerTab(target.farmerTab);
+      setBuyerTab(target.buyerTab);
+      setAdminTab(target.adminTab);
+      if (target.sellWizardStep !== sellWizard.step) {
+        setSellWizard((prev) => ({ ...prev, step: target.sellWizardStep }));
+      }
+      return;
+    }
+
+    // Nothing left in history — one more Back takes you all the way out to
+    // the public landing / role-selector screen, same as a mobile app exit.
+    if (role !== 'landing') {
+      setRoleState('landing');
+    }
+  };
+
+  const showBackButton = role !== 'landing';
+
 
   // Auth
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -429,7 +504,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'active',
       createdAt: 'Just now',
       harvestDate: sellWizard.harvestDate,
-      matchedBuyersCount: 4
+      matchedBuyersCount: 4,
+      farmerRating: 4.7
     };
 
     setListings((prev) => [newListing, ...prev]);
@@ -468,7 +544,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '🎉 Listing Published Live!',
+      titleHi: '🎉 लिस्टिंग प्रकाशित हुई!',
       message: `${newListing.cropName} is now visible. ABC Foods immediately sent an offer of ₹${sellWizard.expectedPrice - 20}/q.`,
+      messageHi: `${newListing.cropName} अब सभी खरीदारों को दिख रहा है। ABC Foods ने तुरंत ₹${sellWizard.expectedPrice - 20}/क्विंटल का ऑफर भेजा।`,
       actionTab: 'offers'
     });
 
@@ -521,7 +599,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             addNotification({
               type: 'counter',
               title: '💬 Buyer Counter Offer',
+              titleHi: '💬 खरीदार का काउंटर ऑफर',
               message: `${off.buyerName} replied with ₹${buyerCounterPrice}/q. Tap to review and confirm deal.`,
+              messageHi: `${off.buyerName} ने ₹${buyerCounterPrice}/क्विंटल के साथ जवाब दिया। सौदा देखने व पक्का करने के लिए टैप करें।`,
               actionTab: 'offers'
             });
           }, 1500);
@@ -607,7 +687,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'payment',
       title: '✅ Deal Confirmed!',
+      titleHi: '✅ सौदा पक्का हुआ!',
       message: `Deal locked with ${targetOffer.buyerName} at ₹${targetOffer.currentOfferPrice}/q. Escrow initialized.`,
+      messageHi: `${targetOffer.buyerName} के साथ ₹${targetOffer.currentOfferPrice}/क्विंटल पर सौदा पक्का हुआ। एस्क्रो शुरू किया गया।`,
       actionTab: 'txn'
     });
 
@@ -672,7 +754,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: '📋 Requirement Published',
+      titleHi: '📋 आवश्यकता प्रकाशित हुई',
       message: `Requirement for ${req.quantityKg} KG ${req.cropName} is active and matching with farmers.`,
+      messageHi: `${req.quantityKg} किलो ${req.cropName} की आवश्यकता सक्रिय है और किसानों से मिलान हो रहा है।`,
       actionTab: 'find'
     });
   };
@@ -717,7 +801,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'offer',
       title: '📤 Offer Submitted to Farmer',
+      titleHi: '📤 किसान को ऑफर भेजा गया',
       message: `Your offer of ₹${pricePerQuintal}/q was sent to ${targetListing.farmerName}.`,
+      messageHi: `आपका ₹${pricePerQuintal}/क्विंटल का ऑफर ${targetListing.farmerName} को भेजा गया।`,
       actionTab: 'offers'
     });
   };
@@ -726,7 +812,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification({
       type: 'market',
       title: approved ? '✅ Verification Approved' : '❌ Verification Rejected',
+      titleHi: approved ? '✅ सत्यापन स्वीकृत' : '❌ सत्यापन अस्वीकृत',
       message: `${userRole === 'farmer' ? 'Farmer' : 'Buyer'} ID ${userId} status updated by Admin.`,
+      messageHi: `${userRole === 'farmer' ? 'किसान' : 'खरीदार'} ID ${userId} की स्थिति एडमिन द्वारा अपडेट की गई।`,
       actionTab: 'overview'
     });
   };
@@ -763,7 +851,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRole(roleToSet);
     setIsAuthOpen(false);
     if (roleToSet === 'farmer') setFarmerTab('home');
-    if (roleToSet === 'buyer') setBuyerTab('dashboard');
+    if (roleToSet === 'buyer') setBuyerTab('browse');
     if (roleToSet === 'admin') setAdminTab('overview');
   };
 
@@ -785,13 +873,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRole(roleToSet);
     setIsAuthOpen(false);
     if (roleToSet === 'farmer') setFarmerTab('home');
-    if (roleToSet === 'buyer') setBuyerTab('dashboard');
+    if (roleToSet === 'buyer') setBuyerTab('browse');
     if (roleToSet === 'admin') setAdminTab('overview');
 
     addNotification({
       type: 'market',
       title: '🟢 Google Login Verified',
+      titleHi: '🟢 गूगल लॉगिन सत्यापित',
       message: `Signed in as ${userInfo.name} (${userInfo.email || roleToSet}).`,
+      messageHi: `${userInfo.name} (${userInfo.email || roleToSet}) के रूप में लॉग इन किया गया।`,
       actionTab: roleToSet === 'farmer' ? 'profile' : 'dashboard'
     });
 
@@ -812,8 +902,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         role,
         setRole,
-        homeSignal,
-        goHome,
+        goBack,
+        showBackButton,
         language,
         setLanguage,
         toggleLanguage,
