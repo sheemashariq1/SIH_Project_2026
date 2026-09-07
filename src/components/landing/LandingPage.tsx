@@ -18,7 +18,7 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const LandingPage: React.FC = () => {
-  const { setRole, setFarmerTab, setBuyerTab, setAdminTab, t } = useApp();
+  const { setRole, setFarmerTab, setBuyerTab, setAdminTab, setAuthRole, setIsAuthOpen, t } = useApp();
 
   const pipelineSteps = [
     { num: '1', nameEn: 'Harvest Listing', nameHi: 'फसल विवरण', icon: '🌾' },
@@ -111,8 +111,8 @@ export const LandingPage: React.FC = () => {
           {/* Farmer Card */}
           <div
             onClick={() => {
-              setRole('farmer');
-              setFarmerTab('home');
+              setAuthRole('farmer');
+              setIsAuthOpen(true);
             }}
             className="group relative bg-gradient-to-br from-[#14532D] to-[#1E6B3C] p-8 rounded-3xl text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-emerald-400/30 flex flex-col justify-between overflow-hidden"
           >
@@ -155,8 +155,8 @@ export const LandingPage: React.FC = () => {
           {/* Buyer Card */}
           <div
             onClick={() => {
-              setRole('buyer');
-              setBuyerTab('browse');
+              setAuthRole('buyer');
+              setIsAuthOpen(true);
             }}
             className="group relative bg-white p-8 rounded-3xl text-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-gray-200/80 flex flex-col justify-between overflow-hidden"
           >
@@ -201,8 +201,8 @@ export const LandingPage: React.FC = () => {
         <div className="text-center mt-6">
           <button
             onClick={() => {
-              setRole('admin');
-              setAdminTab('overview');
+              setAuthRole('admin');
+              setIsAuthOpen(true);
             }}
             className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-full bg-emerald-950/10 hover:bg-emerald-950/20 text-emerald-900 text-xs font-bold transition-colors"
           >
