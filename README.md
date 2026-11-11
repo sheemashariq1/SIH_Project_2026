@@ -1,4 +1,4 @@
-# 🌾 KisanConnect (किसान कनेक्ट)
+# 🌾 KisanConnect (किसान कनेक्ट)...
 
 > **Smart India Hackathon 2026 Prototype** — A direct farmer-to-buyer agri-marketplace with AI crop grading, mandi price intelligence, live bargaining, and escrow-secured settlements.
 
